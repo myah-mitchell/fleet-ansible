@@ -127,7 +127,7 @@ Ansible does not configure a NixOS host. The host's whole system is a NixOS conf
 | `nixos/fleet.json` | The values every host shares: names, domain, accounts, SSH keys |
 | `nixos/hosts/<host>.json` | One host's network, features, and the folders, files and ports its stacks need |
 
-`nixos-sync.yml` writes both from the inventory, and `komodo-sync.yml` writes the files Komodo's Resource Sync reads. Run both after any change to a NixOS host in the inventory, then commit what they wrote. `site.yml` stops at a host whose committed files are out of date.
+`nixos-sync.yml` writes both from the inventory, and `komodo-sync.yml` writes the files Komodo's Resource Sync reads. Run both after any change to a NixOS host in the inventory, then commit what they wrote. `site.yml` stops at a host whose committed files are out of date, and when anything under the private repo's `nixos/` or `secrets/` is not committed, since the flake reads only what git tracks.
 
 ```bash
 ansible-playbook -i ../fleet-private/hosts.yml nixos-sync.yml
@@ -145,7 +145,13 @@ ansible-playbook -i ../fleet-private/hosts.yml provision.yml \
   -e target=pve_host --tags pve-installer-iso
 ```
 
-The ISO is built from the files git tracks in the private repo, so commit `nixos/fleet.json` before building, and build again after the SSH keys in it change. The role skips the build when the inventory has no `nixos/fleet.json`.
+The ISO carries the fleet's installer SSH host key, which `install-host` checks before it sends a host its keys. The key is in the private repo's `secrets/installer.yaml`. Make that file once, where `<flake>` is the nixos-fleet flake, such as `github:myah-mitchell/nixos-fleet`:
+
+```bash
+nix run <flake>#new-installer-key -- --fleet ../fleet-private
+```
+
+The ISO is built from the files git tracks in the private repo, so commit `nixos/fleet.json` and `secrets/installer.yaml` before building, and build again after the SSH keys in `fleet.json` change. The role stops when either file is untracked or has uncommitted changes, and skips the build when the private repo has no `nixos/fleet.json`.
 
 The setup `site.yml` needs, the environment variables it reads, and what it overwrites are in [How a host is built](https://myah-mitchell.github.io/docs/fleet-bootstrap/concepts/how-a-host-is-built/).
 

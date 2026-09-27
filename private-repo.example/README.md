@@ -18,7 +18,8 @@ The public ansible repo runs on its own against the example inventory in its roo
 | `secrets/fleet.yaml` | You, through sops | The secrets every NixOS host reads |
 | `secrets/hosts/<host>.yaml` | You, through sops | One host's own secrets. Optional |
 | `secrets/host-keys/<host>.yaml` | `new-host-key` | The host's SSH host keys, which no host can read |
-| `.sops.yaml` | You and `new-host-key` | Who can decrypt each sops file |
+| `secrets/installer.yaml` | `new-installer-key` | The installer ISO's SSH host key, which no host can read |
+| `.sops.yaml` | You, `new-host-key` and `new-installer-key` | Who can decrypt each sops file |
 
 Each file owns one kind of fact, and the host name links them. `opentofu/prod.tfvars` repeats a VM's address, prefix length and gateway, and `site.yml` fails when they differ from the inventory.
 
@@ -80,7 +81,13 @@ These steps need nix with flakes enabled, sops, and age on the control node. The
    nix run github:myah-mitchell/nixos-fleet#new-host-key -- --fleet ../fleet-private <host>
    ```
 
-7. Write the two secrets files. Each command opens an editor and encrypts on save:
+7. Make the installer's SSH host key. The installer ISO is built with it, and `install-host` sends a host its keys only to a machine that has it:
+
+   ```bash
+   nix run github:myah-mitchell/nixos-fleet#new-installer-key -- --fleet ../fleet-private
+   ```
+
+8. Write the two secrets files. Each command opens an editor and encrypts on save:
 
    ```bash
    cd ../fleet-private
@@ -89,14 +96,14 @@ These steps need nix with flakes enabled, sops, and age on the control node. The
    ```
 
    The first holds `server_password`. The second holds `server-password-hash` and `komodo-onboarding-key`.
-8. Write the generated files, from the public repo's checkout:
+9. Write the generated files, from the public repo's checkout:
 
    ```bash
    ansible-playbook -i ../fleet-private/hosts.yml nixos-sync.yml
    ansible-playbook -i ../fleet-private/hosts.yml komodo-sync.yml
    ```
 
-9. Commit everything in the private repo. The flake reads only the files git tracks, so a file that is not committed does not reach a host.
+10. Commit everything in the private repo. The flake reads only the files git tracks, so a file that is not committed does not reach a host.
 
 If you have forked the public ansible repo under your own GitHub account, set `github_user` in its `group_vars/all/vars.yml` to match. That is the only place your GitHub user name is recorded.
 
