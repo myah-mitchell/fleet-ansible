@@ -1,8 +1,9 @@
 ---
 # Writes the Komodo Resource Sync files for every host in the inventory that
-# runs Periphery and has a docker_stacks list, one TOML file per host, into
-# komodo/stacks/ next to the inventory. Point it at the private repo's
-# inventory, then review the diff and commit it there:
+# runs Docker and Periphery and has a docker_stacks list (runs_stacks, in
+# group_vars/all/stacks.yml), one TOML file per host, into komodo/stacks/ next
+# to the inventory. Point it at the private repo's inventory, then review the
+# diff and commit it there:
 #
 #   ansible-playbook -i ../fleet-private/hosts.yml komodo-sync.yml
 #
@@ -19,18 +20,13 @@
   become: false
   any_errors_fatal: true
 
-  vars:
-    komodo_sync_runs_stacks: >-
-      {{ (DOCKER | default(false) | bool) and (KOMODO | default(false) | bool)
-         and (docker_stacks | default([]) | length > 0) }}
-
   tasks:
     - name: Work out each host's stacks
       ansible.builtin.include_role:
         name: stacks
         tasks_from: list
         public: true
-      when: komodo_sync_runs_stacks | bool
+      when: runs_stacks | bool
 
     - name: Create the sync folder
       ansible.builtin.file:
@@ -45,7 +41,7 @@
         name: komodo_stacks
         tasks_from: render
         public: true
-      when: komodo_sync_runs_stacks | bool
+      when: runs_stacks | bool
 
     - name: Find the sync files already there
       ansible.builtin.find:
@@ -56,7 +52,8 @@
       delegate_to: localhost
 
     # Kept by the whole inventory rather than this play's hosts, so a run with
-    # --limit leaves the other hosts' files alone.
+    # --limit leaves the other hosts' files alone. runs_stacks is in the
+    # ansible repo's group_vars/all/stacks.yml.
     - name: Remove the files of hosts that no longer run Stacks
       ansible.builtin.file:
         path: "{{ item.path }}"
@@ -71,9 +68,7 @@
         keep: >-
           {%- set keep = [] -%}
           {%- for host in groups['all'] -%}
-            {%- set hv = hostvars[host] -%}
-            {%- if (hv.DOCKER | default(false) | bool) and (hv.KOMODO | default(false) | bool)
-                  and (hv.docker_stacks | default([]) | length > 0) -%}
+            {%- if hostvars[host].runs_stacks | bool -%}
               {{- keep.append(host) or '' -}}
             {%- endif -%}
           {%- endfor -%}

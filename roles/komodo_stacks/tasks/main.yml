@@ -2,5 +2,5 @@
 - name: Include Komodo Stack Tasks
   ansible.builtin.include_tasks: komodo_stacks.yml
   when:
+    - runs_stacks | bool
     - komodo_stacks_manage | bool
-    - docker_stacks | default([]) | length > 0

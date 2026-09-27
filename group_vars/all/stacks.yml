@@ -1,0 +1,14 @@
+---
+#### stacks.yml: which hosts run stacks, as one test that every playbook
+#### shares. Not a setting: set DOCKER, KOMODO and docker_stacks in the
+#### inventory instead.
+
+# True on a host whose docker_stacks site.yml deploys: a Docker host that runs
+# Komodo's Periphery and lists at least one stack. The nixos role gives such a
+# host the folders, files and ports its stacks need, komodo-sync.yml writes
+# its Komodo sync file, and site.yml's komodo stage deploys its Stacks. It
+# lives here, next to the playbooks, rather than in a role, so the sync
+# playbooks can read it through hostvars for hosts outside the play.
+runs_stacks: >-
+  {{ (DOCKER | default(false) | bool) and (KOMODO | default(false) | bool)
+     and (docker_stacks | default([]) | length > 0) }}

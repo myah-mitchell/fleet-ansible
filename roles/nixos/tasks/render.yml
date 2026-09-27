@@ -36,7 +36,7 @@
     name: stacks
     tasks_from: list
     public: true
-  when: nixos_runs_stacks | bool
+  when: runs_stacks | bool
 
 - name: Check the internal subnet is set when a rule needs it
   ansible.builtin.assert:

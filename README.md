@@ -202,6 +202,7 @@ The GitHub user or organisation these repos live under is one variable: `github_
 | `nixos-sync.yml` | Writes the private repo's `nixos/` files from the inventory |
 | `komodo-sync.yml` | Writes the private repo's `komodo/stacks/<host>.toml` files from the inventory |
 | `group_vars/all/vars.yml` | Shared defaults to edit in a fork, which is `github_user` only |
+| `group_vars/all/stacks.yml` | `runs_stacks`, the one test of whether a host runs stacks, which the roles and the sync playbooks share |
 | `roles/` | One role per concern |
 | `private-repo.example/` | A worked example of the private repo |
 

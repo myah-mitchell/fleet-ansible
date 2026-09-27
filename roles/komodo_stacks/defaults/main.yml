@@ -14,8 +14,11 @@
 #### A Stack's Environment comes from that file, so an edit made to it in the
 #### Komodo UI is undone by the next sync.
 
-# Off unless the host runs Periphery.
-komodo_stacks_manage: "{{ KOMODO | default(false) }}"
+# The stage runs for a host where runs_stacks is true (a Docker host that runs
+# Periphery and lists stacks, see group_vars/all/stacks.yml). Set this false on
+# such a host to leave its Stacks out of site.yml's komodo stage for a while.
+# komodo-sync.yml still writes its file.
+komodo_stacks_manage: true
 
 # Core's API. The same address Periphery dials unless Core sits behind
 # something else for API clients.

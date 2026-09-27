@@ -3,7 +3,6 @@ nixos_nix: "{{ nixos_nix_binary if nixos_nix_binary | length > 0 else nixos_nix_
 nixos_sync_dir: "{{ inventory_dir }}/nixos"
 nixos_address: "{{ ansible_host | default(inventory_hostname) }}"
 nixos_host_name: "{{ serverHostname | default(inventory_hostname, true) | lower }}"
-nixos_runs_stacks: "{{ (DOCKER | bool) and (docker_stacks | default([]) | length > 0) }}"
 
 
 # Written as single expressions, so every number, boolean and list keeps its
