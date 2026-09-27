@@ -1,0 +1,212 @@
+{
+  "features": {
+    "auditd": false,
+    "docker": true,
+    "fail2ban": true,
+    "firewall": true,
+    "komodo": true,
+    "mail": true,
+    "mosh": true,
+    "nodeExporter": true
+  },
+  "hostName": "km01",
+  "internalSubnet": "192.0.2.0/24",
+  "network": {
+    "address": "192.0.2.101",
+    "dns": [
+      "192.0.2.1"
+    ],
+    "gateway": "192.0.2.1",
+    "interface": "ens18",
+    "prefixLength": 24
+  },
+  "stacks": {
+    "files": [
+      {
+        "content": "###########################\n# \ud83e\udd8e KOMODO CORE CONFIG \ud83e\udd8e #\n###########################\n\n## This is the offical \"Default\" config file for Komodo Core.\n## It serves as documentation for the meaning of the fields.\n## It is located at `https://github.com/moghtech/komodo/blob/main/config/core.config.toml`.\n\n## All fields with a \"Default\" provided are optional. If they are\n## left out of the file, the \"Default\" value will be used.\n\n## This file is bundled into the official image, `ghcr.io/moghtech/komodo-core`,\n## as the default config at `/config/.default.config.toml`.\n## Komodo Core can start with no external config file mounted.\n\n## Most fields can also be configured using environment variables.\n## Environment variables will override values set in this file.\n\n## Can also use JSON or YAML if preferred. You can convert here:\n##   - YAML: https://it-tools.tech/toml-to-yaml\n##   - JSON: https://it-tools.tech/toml-to-json\n\n## This will be the document title on the web page.\n## Env: KOMODO_TITLE\n## Default: 'Komodo'\ntitle = \"Komodo\"\n\n## This should be the url used to access Komodo in browser, potentially behind DNS.\n## Eg https://komodo.example.com or http://12.34.56.78:9120. This should match the address configured in your Oauth app.\n## Env: KOMODO_HOST\n## Required, no default.\n# host = \"https://komodo\"\n\n## The port the core system will run on.\n## Env: KOMODO_PORT\n## Default: 9120\nport = 9120\n\n## The IP address the core server will bind to.\n## The default will allow it to accept external IPv4 and IPv6 connections.\n## Env: KOMODO_BIND_IP\n## Default: [::]\nbind_ip = \"[::]\"\n\n## Default private key to use with Noise handshake to authenticate with Periphery agents.\n## If using `file:/path/to/file` and the file doesn't exist yet,\n## Core will generate and write new key to the path.\n## Env: KOMODO_PRIVATE_KEY or KOMODO_PRIVATE_KEY_FILE\n## Default: file:/config/keys/core.key\nprivate_key = \"file:/config/keys/core.key\"\n\n## Default accepted public key to allow Periphery to connect.\n## If not provided, Periphery -> Core connected Servers must\n## configure accepted public keys individually.\n## Accepts public keys files using `file:/path/to/periphery.pub`.\n## Note: If used, the public key can still be overridden on individual Servers / Builders.\n## Env: KOMODO_PERIPHERY_PUBLIC_KEY\n## Default: None\n# periphery_public_key = \"file:/config/keys/periphery.pub\"\n\n## Deprecated. Legacy v1 compatibility - this repo no longer uses passkeys,\n## see private_key/periphery_public_key above. Kept here only as documentation\n## of the field this repo migrated away from.\n## Ensure this matches a passkey in the connected periphery configs.\n## If the periphery servers don't have passkeys configured, this doesn't need to be changed.\n## Env: KOMODO_PASSKEY or KOMODO_PASSKEY_FILE\n# passkey = \"default-passkey-changeme\"\n\n## Ensure a server with this address exists on Core\n## upon first startup. Example: `https://periphery:8120`\n## Env: KOMODO_FIRST_SERVER\n## Optional, no default.\n# first_server = \"\"\n\n## Give the first server a custom name.\n## Env: KOMODO_FIRST_SERVER_NAME\n## Default: Local\n#first_server_name = \"Local\"\n\n## Disables write support on resources in the UI.\n## This protects users that that would normally have write priviledges during their UI usage,\n## when they intend to fully rely on ResourceSyncs to manage config.\n## Env: KOMODO_UI_WRITE_DISABLED\n## Default: false\nui_write_disabled = false\n\n## Disables the confirm dialogs on all actions. All buttons will now be double-click.\n## Useful when only having http connection to core, as UI quick-copy button won't work.\n## Env: KOMODO_DISABLE_CONFIRM_DIALOG\n## Default: false\ndisable_confirm_dialog = true\n\n## Disables UI websocket automatic reconnection.\n## Users will still be able to trigger reconnect by clicking the connection indicator.\n## Env: KOMODO_DISABLE_WEBSOCKET_RECONNECT\n## Default: false\ndisable_websocket_reconnect = false\n\n\n## Disable init system resource creation on fresh Komodo launch.\n## These include the 'Backup Core Database' and 'Global Auto Update' procedures.\n## Env: KOMODO_DISABLE_INIT_RESOURCES\n## Default: false\ndisable_init_resources = false\n\n## Configure the directory for sync files (inside the container).\n## There shouldn't be a need to change this, just mount a volume.\n## Env: KOMODO_SYNC_DIRECTORY\n## Default: /syncs\nsync_directory = \"/syncs\"\n\n## Configure the repo directory (inside the container).\n## There shouldn't be a need to change this, just mount a volume.\n## Env: KOMODO_REPO_DIRECTORY\n## Default: /repo-cache\nrepo_directory = \"/repo-cache\"\n\n## Configure the action directory (inside the container).\n## There shouldn't be a need to change this, or even mount a volume.\n## Env: KOMODO_ACTION_DIRECTORY\n## Default: /action-cache\naction_directory = \"/action-cache\"\n\n## Interface to use as default route in multi-NIC environments.\n## Env: KOMODO_INTERNET_INTERFACE\n## Example: \"eth1\"\n## Optional, no default.\ninternet_interface = \"\"\n\n################\n# AUTH / LOGIN #\n################\n\n## Allow user login with a username / password.\n## The password will be hashed and stored in the db for login comparison.\n##\n## NOTE:\n## Komodo has no API to recover account logins, but if this happens you can doctor the database using Mongo Compass.\n## Create a new Komodo user (Sign Up button), login to the database with Compass, note down your old users username and _id.\n## Then delete the old user, and update the new user to have the same username and _id. \n## Make sure to set `enabled: true` and maybe `admin: true` on the new user as well, while using Compass.\n##\n## Env: KOMODO_LOCAL_AUTH\n## Default: false\nlocal_auth = true\n\n## Initialize the first admin user when starting up Komodo for the first time.\n## Env: KOMODO_INIT_ADMIN_USERNAME or KOMODO_INIT_ADMIN_USERNAME_FILE\n## Default: None\n# init_admin_username = \"admin\"\n\n## Set password for first admin user\n## Env: KOMODO_INIT_ADMIN_PASSWORD or KOMODO_INIT_ADMIN_PASSWORD_FILE\n## Default: changeme\n#init_admin_password = \"changeme\"\n\n## Normally new users will be registered, but not enabled until an Admin enables them.\n## With `disable_user_registration = true`, only the first user to log in will registered as a user.\n## Env: KOMODO_DISABLE_USER_REGISTRATION\n## Default: false\ndisable_user_registration = false\n\n## New users will be automatically enabled when they sign up.\n## Otherwise, new users will be disabled on first login.\n## The first user to login will always be enabled on creation.\n## Env: KOMODO_ENABLE_NEW_USERS\n## Default: false\nenable_new_users = false\n\n## Allows all users to have Read level access to all resources.\n## Env: KOMODO_TRANSPARENT_MODE\n## Default: false\ntransparent_mode = false\n\n## Normally all enabled users can create resources.\n## If `disable_non_admin_create = true`, only admin users can create resources.\n## Env: KOMODO_DISABLE_NON_ADMIN_CREATE\n## Default: false\ndisable_non_admin_create = true\n\n## Normally users can update their username / password using the API.\n## This will disable this ability for specific users or all users.\n## Example:\n##  - `lock_login_credentials_for = []` will allow all users to update username / password.\n##  - `lock_login_credentials_for = [\"demo\"]` will block the demo user from doing so.\n##  - `lock_login_credentials_for = [\"__ALL__\"]` will block all users.\n## Env: KOMODO_LOCK_LOGIN_CREDENTIALS_FOR\n## Default: empty list\nlock_login_credentials_for = []\n\n## Optionally provide a specific jwt secret.\n## Passing nothing or an empty string will cause one to be generated on every startup.\n## This means users will have to log in again if Komodo restarts.\n## Env: KOMODO_JWT_SECRET or KOMODO_JWT_SECRET_FILE\n## Default: empty string, meaning a random secret will be generated at startup.\njwt_secret = \"\"\n\n## Specify how long a user can stay logged in before they have to log in again.\n## All jwts are invalidated on application restart unless `jwt_secret` is set.\n## Env: KOMODO_JWT_TTL\n## Options: https://docs.rs/komodo_client/latest/komodo_client/entities/enum.Timelength.html\n## Default: 1-day. \njwt_ttl = \"1-day\"\n\n#############\n# OIDC Auth #\n#############\n\n## Enable logins with configured OIDC provider.\n## Env: KOMODO_OIDC_ENABLED\n## Default: false\noidc_enabled = false\n\n## Give the provider address.\n##\n## The path, ie /application/o/komodo for Authentik,\n## is provider and configuration specific.\n##\n## Note. this address must be reachable from Komodo Core container.\n##\n## Env: KOMODO_OIDC_PROVIDER\n## Optional, no default.\n# oidc_provider = \"https://oidc.provider.internal/application/o/komodo\"\n\n## Configure OIDC user redirect host.\n##\n## This is the host address users are redirected to in their browser,\n## and may be different from `oidc_provider` host depending on your networking.\n## If not provided (or empty string \"\"), the `oidc_provider` will be used.\n##\n## Note. DO NOT include the `path` part of the URL.\n## Example: `https://oidc.provider.external`\n##\n## Env: KOMODO_OIDC_REDIRECT_HOST\n## Optional, no default.\n# oidc_redirect_host = \"\"\n\n## Set the OIDC Client ID.\n## Env: KOMODO_OIDC_CLIENT_ID or KOMODO_OIDC_CLIENT_ID_FILE\n# oidc_client_id = \"\"\n\n## Set the OIDC Client Secret.\n## If the OIDC provider supports PKCE-only flow,\n## the client secret is not necessary and can be ommitted or left empty.\n## Env: KOMODO_OIDC_CLIENT_SECRET or KOMODO_OIDC_CLIENT_SECRET_FILE\n# oidc_client_secret = \"\"\n\n## If true, use the full email for usernames.\n## Otherwise, the @address will be stripped,\n## making usernames more concise.\n## Note. This does not work for all OIDC providers.\n## Env: KOMODO_OIDC_USE_FULL_EMAIL\n## Default: false.\n# oidc_use_full_email = false\n\n## Some providers attach other audiences in addition to the client_id.\n## If you have this issue, `Invalid audiences: `...` is not a trusted audience\"`,\n## you can add the audience `...` to the list here (assuming it should be trusted).\n## Env: KOMODO_OIDC_ADDITIONAL_AUDIENCES or KOMODO_OIDC_ADDITIONAL_AUDIENCES_FILE\n## Default: empty\n# oidc_additional_audiences = []\n\n#########\n# OAUTH #\n#########\n\n## Google\n\n## Env: KOMODO_GOOGLE_OAUTH_ENABLED\n## Default: false\ngoogle_oauth.enabled = false\n\n## Env: KOMODO_GOOGLE_OAUTH_ID or KOMODO_GOOGLE_OAUTH_ID_FILE\n## Required if google_oauth is enabled.\ngoogle_oauth.id = \"\"\n\n## Env: KOMODO_GOOGLE_OAUTH_SECRET or KOMODO_GOOGLE_OAUTH_SECRET_FILE\n## Required if google_oauth is enabled.\ngoogle_oauth.secret = \"\"\n\n## Github\n\n## Env: KOMODO_GITHUB_OAUTH_ENABLED\n## Default: false\ngithub_oauth.enabled = false\n\n## Env: KOMODO_GITHUB_OAUTH_ID or KOMODO_GITHUB_OAUTH_ID_FILE\n## Required if github_oauth is enabled.\ngithub_oauth.id = \"\"\n\n## Env: KOMODO_GITHUB_OAUTH_SECRET or KOMODO_GITHUB_OAUTH_SECRET_FILE\n## Required if github_oauth is enabled.\ngithub_oauth.secret = \"\"\n\n##################\n# POLL INTERVALS #\n##################\n\n## Controls the rate at which servers are polled for health, system stats, and container status.\n## This affects network usage, and the size of the stats stored in mongo.\n## Env: KOMODO_MONITORING_INTERVAL\n## Options: https://docs.rs/komodo_client/latest/komodo_client/entities/enum.Timelength.html\n## Default: 15-sec\nmonitoring_interval = \"15-sec\"\n\n## Interval at which to poll Resources for any updates / automated actions.\n## Env: KOMODO_RESOURCE_POLL_INTERVAL\n## Options: https://docs.rs/komodo_client/latest/komodo_client/entities/enum.Timelength.html\n## Default: 1-hr\nresource_poll_interval = \"1-hr\"\n\n############\n# Security #\n############\n\n## Enable HTTPS server using the given key and cert.\n## Env: KOMODO_SSL_ENABLED\n## Default: false\nssl_enabled = false\n\n## Path to the ssl key.\n## Env: KOMODO_SSL_KEY_FILE\n## Default: /config/ssl/key.pem\nssl_key_file = \"/config/ssl/key.pem\"\n\n## Path to the ssl cert.\n## Env: KOMODO_SSL_CERT_FILE\n## Default: /config/ssl/cert.pem\nssl_cert_file = \"/config/ssl/cert.pem\"\n\n############\n# DATABASE #\n############\n\n## Configure the database connection in one of the following ways:\n\n## Pass a full Mongo URI to the database.\n## Example: mongodb://username:password@localhost:27017\n## Env: KOMODO_DATABASE_URI or KOMODO_DATABASE_URI_FILE\n## Optional, can usually use `address`, `username`, `password` instead.\ndatabase.uri = \"\"\n\n## ==== * OR * ==== ##\n\n# Construct the address as mongodb://{username}:{password}@{address}\n## Env: KOMODO_DATABASE_ADDRESS\ndatabase.address = \"localhost:27017\"\n## Env: KOMODO_DATABASE_USERNAME or KOMODO_DATABASE_USERNAME_FILE\ndatabase.username = \"\"\n## Env: KOMODO_DATABASE_PASSWORD or KOMODO_DATABASE_PASSWORD_FILE\ndatabase.password = \"\"\n\n## ==== other ====\n\n## Komodo will create its collections under this database name.\n## The only reason to change this is if multiple Komodo Cores share the same db.\n## Env: KOMODO_DATABASE_DB_NAME\n## Default: komodo.\ndatabase.db_name = \"komodo\"\n\n## This is the assigned app_name of the mongo client.\n## The only reason to change this is if multiple Komodo Cores share the same db.\n## Env: KOMODO_DATABASE_APP_NAME\n## Default: komodo_core.\ndatabase.app_name = \"komodo_core\"\n\n############\n# WEBHOOKS #\n############\n\n## This token must be given to git provider during repo webhook config.\n## The secret configured on the git provider side must match the secret configured here.\n## If not provided, \n## Env: KOMODO_WEBHOOK_SECRET or KOMODO_WEBHOOK_SECRET_FILE\n## Optional, no default.\n#webhook_secret = \"a_random_webhook_secret\"\n\n## An alternate base url that is used to recieve git webhook requests.\n## If empty or not specified, will use 'host' address as base.\n## This is useful if Komodo is on an internal network, but can have a\n## proxy just allowing through the webhook listener api using NGINX.\n## Env: KOMODO_WEBHOOK_BASE_URL\n## Default: empty (none)\nwebhook_base_url = \"\"\n\n## Configure Github webhook app. Enables webhook management apis.\n## <INSERT LINK TO GUIDE>\n## Env: KOMODO_GITHUB_WEBHOOK_APP_APP_ID or KOMODO_GITHUB_WEBHOOK_APP_APP_ID_FILE\n# github_webhook_app.app_id = 1234455 # Find on the app page.\n## Env: \n##   - KOMODO_GITHUB_WEBHOOK_APP_INSTALLATIONS_IDS or KOMODO_GITHUB_WEBHOOK_APP_INSTALLATIONS_IDS_FILE\n##   - KOMODO_GITHUB_WEBHOOK_APP_INSTALLATIONS_NAMESPACES\n# github_webhook_app.installations = [\n#   ## Find the id after installing the app to user / organization. \"namespace\" is the username / organization name.\n#   { id = 1234, namespace = \"mbecker20\" }\n# ]\n\n## The path to Github webhook app private key. <INSERT LINK TO GUIDE>\n## This is defaulted to `/github/private-key.pem`, and doesn't need to be changed if running core in Docker.\n## Just mount the private key pem file on the host to `/github/private-key.pem` in the container.\n## Eg. `/your/path/to/key.pem : /github/private-key.pem`\n## Env: KOMODO_GITHUB_WEBHOOK_APP_PK_PATH\n# github_webhook_app.pk_path = \"/path/to/pk.pem\"\n\n###########\n# LOGGING #\n###########\n\n## Specify the logging verbosity\n## Env: KOMODO_LOGGING_LEVEL\n## Options: off, error, warn, info, debug, trace\n## Default: info\nlogging.level = \"info\"\n\n## Specify the logging format.\n## Env: KOMODO_LOGGING_STDIO\n## Options: standard, json, none\n## Default: standard\nlogging.stdio = \"standard\"\n\n## Optionally specify a opentelemetry otlp endpoint to send traces to.\n## Example: http://localhost:4317\n## Env: KOMODO_LOGGING_OTLP_ENDPOINT\nlogging.otlp_endpoint = \"\"\n\n## Set the opentelemetry service name.\n## This will be attached to the telemetry Komodo will send.\n## Env: KOMODO_LOGGING_OPENTELEMETRY_SERVICE_NAME\n## Default: \"Komodo\"\nlogging.opentelemetry_service_name = \"Komodo\"\n\n## Specify whether logging is more human readable.\n## Note. Single logs will span multiple lines.\n## Env: KOMODO_LOGGING_PRETTY\n## Default: false\nlogging.pretty = false\n\n## Specify whether startup config log\n## is more human readable (multi-line)\n## Env: KOMODO_PRETTY_STARTUP_CONFIG\n## Default: false\npretty_startup_config = false\n\n###########\n# PRUNING #\n###########\n\n## The number of days to keep historical system stats around, or 0 to disable pruning. \n## Stats older that are than this number of days are deleted on a daily cycle.\n## Env: KOMODO_KEEP_STATS_FOR_DAYS\n## Default: 14\nkeep_stats_for_days = 360\n\n## The number of days to keep alerts around, or 0 to disable pruning. \n## Alerts older that are than this number of days are deleted on a daily cycle.\n## Env: KOMODO_KEEP_ALERTS_FOR_DAYS\n## Default: 14\nkeep_alerts_for_days = 360\n\n###################\n# CLOUD PROVIDERS #\n###################\n\n## Komodo can build images by deploying AWS EC2 instances,\n## running the build, and afterwards destroying the instance.\n\n## Provide AWS api keys for ephemeral builders\n## Env: KOMODO_AWS_ACCESS_KEY_ID or KOMODO_AWS_ACCESS_KEY_ID_FILE\naws.access_key_id = \"\"\n## Env: KOMODO_AWS_SECRET_ACCESS_KEY or KOMODO_AWS_SECRET_ACCESS_KEY_FILE\naws.secret_access_key = \"\"\n\n#################\n# GIT PROVIDERS #\n#################\n\n## These will be available to attach to Builds, Repos, Stacks, and Syncs.\n## They allow these Resources to clone private repositories.\n## They cannot be configured on the environment.\n\n## configure git providers\n# [[git_provider]]\n# domain = \"github.com\"\n# accounts = [\n# \t{ username = \"mbecker20\", token = \"access_token_for_account\" },\n# \t{ username = \"moghtech\", token = \"access_token_for_other_account\" },\n# ]\n\n# [[git_provider]]\n# domain = \"git.mogh.tech\" # use a custom provider, like self-hosted gitea\n# accounts = [\n# \t{ username = \"mbecker20\", token = \"access_token_for_account\" },\n# ]\n\n# [[git_provider]]\n# domain = \"localhost:8000\" # use a custom provider, like self-hosted gitea\n# https = false # use http://localhost:8000 as base-url for clone\n# accounts = [\n# \t{ username = \"mbecker20\", token = \"access_token_for_account\" },\n# ]\n\n######################\n# REGISTRY PROVIDERS #\n######################\n\n## These will be available to attach to Builds and Stacks.\n## They allow these Resources to pull private images.\n## They cannot be configured on the environment.\n\n## configure docker registries\n# [[docker_registry]]\n# domain = \"docker.io\"\n# accounts = [\n# \t{ username = \"mbecker2020\", token = \"access_token_for_account\" }\n# ]\n# organizations = [\"DockerhubOrganization\"]\n\n# [[docker_registry]]\n# domain = \"git.mogh.tech\" # use a custom provider, like self-hosted gitea\n# accounts = [\n# \t{ username = \"mbecker20\", token = \"access_token_for_account\" },\n# ]\n# organizations = [\"Mogh\"] # These become available in the UI\n\n###########\n# SECRETS #\n###########\n\n## Provide Core based secrets.\n## These will be available to interpolate into your Deployment / Stack environments,\n## and will be hidden in the UI and logs.\n## These are available to use on any Periphery (Server),\n## but you can also limit access more by placing them in a single Periphery's config file instead.\n## These cannot be configured in the Komodo Core environment, they must be passed in the file.\n\n# [secrets]\n# SECRET_1 = \"value_1\"\n# SECRET_2 = \"value_2\"\n",
+        "group": 101000,
+        "mode": "0600",
+        "owner": 101000,
+        "path": "komodo-secrets/core.config.toml",
+        "project": "komodo"
+      }
+    ],
+    "firewall": [
+      {
+        "allowFrom": "internal",
+        "comment": "Vector syslog",
+        "port": 5140,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "internal",
+        "comment": "Vector syslog",
+        "port": 5140,
+        "proto": "udp"
+      },
+      {
+        "allowFrom": "internal",
+        "comment": "Dozzle agent",
+        "port": 7007,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Traefik HTTP",
+        "port": 80,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Traefik HTTPS",
+        "port": 443,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Traefik HTTPS (alt)",
+        "port": 8443,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Komodo Core",
+        "port": 9120,
+        "proto": "tcp"
+      }
+    ],
+    "folders": [
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "vmagent-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "vlagent-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "vector-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 100000,
+        "mode": null,
+        "owner": 100000,
+        "path": "dockns-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": "0755",
+        "owner": 101000,
+        "path": "traefik",
+        "project": "traefik",
+        "root": "logs"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "traefik-certs",
+        "project": "traefik",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "traefik-plugins",
+        "project": "traefik",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "ferretdb-data",
+        "project": "komodo",
+        "root": "volumes"
+      },
+      {
+        "group": 100000,
+        "mode": null,
+        "owner": 100000,
+        "path": "postgres-data",
+        "project": "komodo",
+        "root": "volumes"
+      },
+      {
+        "group": 100000,
+        "mode": null,
+        "owner": 100000,
+        "path": "postgres-backup-data",
+        "project": "komodo",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "komodo-keys",
+        "project": "komodo",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "komodo-backups",
+        "project": "komodo",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "komodo-sync",
+        "project": "komodo",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "komodo-cache",
+        "project": "komodo",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": "0700",
+        "owner": 101000,
+        "path": "komodo-secrets",
+        "project": "komodo",
+        "root": "volumes"
+      }
+    ],
+    "names": [
+      "system-agent",
+      "traefik-agent",
+      "komodo-server"
+    ],
+    "projects": [
+      "system",
+      "traefik",
+      "komodo"
+    ]
+  },
+  "swapMiB": 512
+}

@@ -1,0 +1,36 @@
+# Who can decrypt each sops file in this repo. The keys below are placeholders:
+# replace them with your own age public keys. `nix run <flake>#new-host-key`
+# adds a host's key and its rules, and re-encrypts the files it may now read,
+# so a host entry is never written by hand.
+#
+#   admin   a person. The private key is in a password manager.
+#   deploy  what Semaphore and the control shell decrypt with at run time,
+#           from SOPS_AGE_KEY or SOPS_AGE_KEY_FILE.
+#   ex01    one per host, derived from its ed25519 SSH host key, which is how
+#           the host decrypts its own secrets.
+keys:
+  - &admin age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  - &deploy age1yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+  - &ex01 age1zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+
+creation_rules:
+  # Ansible's own secrets. No host reads them.
+  - path_regex: ^group_vars/all/secrets\.sops\.yaml$
+    key_groups:
+      - age: [*admin, *deploy]
+
+  # The secrets every NixOS host reads.
+  - path_regex: ^secrets/fleet\.yaml$
+    key_groups:
+      - age: [*admin, *deploy, *ex01]
+
+  # One host's own secrets.
+  - path_regex: ^secrets/hosts/ex01\.yaml$
+    key_groups:
+      - age: [*admin, *deploy, *ex01]
+
+  # Every host's SSH host keys. A host never reads them. The install puts
+  # them on the host's persistent disk.
+  - path_regex: ^secrets/host-keys/[^/]+\.yaml$
+    key_groups:
+      - age: [*admin, *deploy]

@@ -1,13 +1,14 @@
 ---
-#### private.yml: everything the public ansible repo would rather not
-#### publish, in one place. This is a starter skeleton: fill in your real
-#### values below. Ansible loads it for every host, because it sits in
-#### group_vars/all/ next to hosts.yml, whether you point -i at the private
-#### repo's hosts.yml or copy both into a checkout of the public repo. See
-#### README.md in this folder.
+#### private.yml: the fleet's values that are not secret but that the public
+#### ansible repo would rather not publish, in one place. This is a starter
+#### skeleton: fill in your real values below. Ansible loads it for every host,
+#### because it sits in group_vars/all/ next to hosts.yml. Secrets do not go
+#### here. They go in secrets.sops.yaml, next to this file, which sops
+#### encrypts. See README.md in this folder.
 
-# SSH public keys to install. Empty here, so no keys are installed. See
-# roles/users/tasks/*.yml and roles/users/defaults/main.yml.
+# SSH public keys per account. Empty here, so no keys are installed. The
+# ansible keys are what site.yml and Semaphore connect with. See
+# roles/nixos/defaults/main.yml and roles/users/defaults/main.yml.
 admin_ssh_public_keys: []
 ansible_ssh_public_keys: []
 # client_ssh_public_keys defaults to admin_ssh_public_keys. Only set this if
@@ -28,8 +29,12 @@ komodo_core_public_key: ""
 # so no CAs are installed. See roles/certificates/tasks/certificates.yml.
 ca_certificates: []
 
-# SSH login banner (/etc/legal). See roles/ssh/defaults/main.yml and
-# roles/ssh/tasks/ssh.yml for how these two are rendered together.
+# NTP servers for the NixOS hosts, as a list of names or addresses. Empty
+# leaves each host with its own default.
+ntp_servers: []
+
+# SSH login banner. The Proxmox hosts frame ssh_legal_banner_name as ASCII art
+# above the body. See roles/ssh/defaults/main.yml.
 # ssh_legal_banner_name: "{{ short_name }}"
 # ssh_legal_banner_body: |
 #   Unauthorized access to this system is prohibited.
@@ -38,18 +43,6 @@ ca_certificates: []
 # The human admin login (not the ansible service account). See
 # roles/users/defaults/main.yml.
 client_account: "clientuser"
-
-# Read-only PAT scoped to just this private repo. Baked into the cloud-init
-# template (see roles/pve/templates/cloudinit-vendor.yml.j2) so freshly
-# provisioned VMs can pull this same private repo on first boot. Empty
-# here, so a fresh VM runs against the public repo's sanitized example data
-# instead. See roles/pve/defaults/main.yml.
-ansible_private_repo_token: ""
-
-# site.yml: switch the PVE cloud-init snippet to minimal once site.yml is how
-# VMs get built, so a new VM waits for it instead of provisioning itself as the
-# ubuntu_docker example host. See roles/pve/defaults/main.yml.
-# pve_cloudinit_mode: "minimal"
 
 # site.yml: the sub-domain each Komodo Stack's SUB_DOMAIN_NAME gets, with its
 # trailing dot, for example "home.". Komodo's API key and secret are

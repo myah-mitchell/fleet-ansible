@@ -1,0 +1,20 @@
+{
+  "abbrName": "ex",
+  "adminList": "exadmins@example.com",
+  "adminName": "exadmin",
+  "adminSshKeys": [],
+  "caCertificates": [],
+  "clientAccount": "clientuser",
+  "clientSshKeys": [],
+  "deployAccount": "ansible",
+  "deploySshKeys": [],
+  "domainName": "example.com",
+  "komodoCoreAddress": "",
+  "komodoCorePublicKey": "",
+  "locationAbbr": "h",
+  "locationDomain": "h.example.com",
+  "ntpServers": [],
+  "shortName": "EXAMPLE",
+  "sshBannerBody": "",
+  "timeZone": "America/Chicago"
+}

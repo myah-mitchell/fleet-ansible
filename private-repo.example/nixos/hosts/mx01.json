@@ -1,0 +1,213 @@
+{
+  "features": {
+    "auditd": false,
+    "docker": true,
+    "fail2ban": true,
+    "firewall": true,
+    "komodo": true,
+    "mail": true,
+    "mosh": true,
+    "nodeExporter": true
+  },
+  "hostName": "mx01",
+  "internalSubnet": "192.0.2.0/24",
+  "network": {
+    "address": "198.51.100.102",
+    "dns": [
+      "198.51.100.1"
+    ],
+    "gateway": "198.51.100.1",
+    "interface": "ens18",
+    "prefixLength": 24
+  },
+  "stacks": {
+    "files": [],
+    "firewall": [
+      {
+        "allowFrom": "internal",
+        "comment": "Vector syslog",
+        "port": 5140,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "internal",
+        "comment": "Vector syslog",
+        "port": 5140,
+        "proto": "udp"
+      },
+      {
+        "allowFrom": "internal",
+        "comment": "Dozzle agent",
+        "port": 7007,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Traefik HTTP",
+        "port": 80,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Traefik HTTPS",
+        "port": 443,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Traefik HTTPS (alt)",
+        "port": 8443,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Stalwart SMTP",
+        "port": 25,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Stalwart submissions",
+        "port": 465,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Stalwart submission",
+        "port": 587,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Stalwart IMAPS",
+        "port": 993,
+        "proto": "tcp"
+      }
+    ],
+    "folders": [
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "vmagent-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "vlagent-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "vector-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 100000,
+        "mode": null,
+        "owner": 100000,
+        "path": "dockns-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": "0755",
+        "owner": 101000,
+        "path": "traefik",
+        "project": "traefik",
+        "root": "logs"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "traefik-certs",
+        "project": "traefik",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "traefik-plugins",
+        "project": "traefik",
+        "root": "volumes"
+      },
+      {
+        "group": 102000,
+        "mode": null,
+        "owner": 102000,
+        "path": "stalwart-config",
+        "project": "mail",
+        "root": "volumes"
+      },
+      {
+        "group": 102000,
+        "mode": null,
+        "owner": 102000,
+        "path": "stalwart-data",
+        "project": "mail",
+        "root": "volumes"
+      },
+      {
+        "group": 101001,
+        "mode": null,
+        "owner": 101001,
+        "path": "bulwark-data",
+        "project": "mail",
+        "root": "volumes"
+      },
+      {
+        "group": 101001,
+        "mode": null,
+        "owner": 101001,
+        "path": "bulwark-data/settings",
+        "project": "mail",
+        "root": "volumes"
+      },
+      {
+        "group": 101001,
+        "mode": null,
+        "owner": 101001,
+        "path": "bulwark-data/admin",
+        "project": "mail",
+        "root": "volumes"
+      },
+      {
+        "group": 101001,
+        "mode": null,
+        "owner": 101001,
+        "path": "bulwark-data/admin-state",
+        "project": "mail",
+        "root": "volumes"
+      },
+      {
+        "group": 101001,
+        "mode": null,
+        "owner": 101001,
+        "path": "bulwark-data/telemetry",
+        "project": "mail",
+        "root": "volumes"
+      }
+    ],
+    "names": [
+      "system-agent",
+      "traefik-agent",
+      "stalwart-server"
+    ],
+    "projects": [
+      "system",
+      "traefik",
+      "mail"
+    ]
+  },
+  "swapMiB": 512
+}

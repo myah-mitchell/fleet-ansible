@@ -1,0 +1,156 @@
+{
+  "features": {
+    "auditd": false,
+    "docker": true,
+    "fail2ban": true,
+    "firewall": true,
+    "komodo": true,
+    "mail": true,
+    "mosh": true,
+    "nodeExporter": true
+  },
+  "hostName": "bh01",
+  "internalSubnet": "192.0.2.0/24",
+  "network": {
+    "address": "198.51.100.101",
+    "dns": [
+      "198.51.100.1"
+    ],
+    "gateway": "198.51.100.1",
+    "interface": "ens18",
+    "prefixLength": 24
+  },
+  "stacks": {
+    "files": [
+      {
+        "content": "# cloudflared config.yml \u2014 copy to config.yml (git-ignored) and fill in the real\n# tunnel ID. Ingress rules themselves aren't secret and stay in git; only the\n# tunnel ID (used just to name the credentials file) and credentials.json are.\n#\n# One-time setup (from an admin machine with `cloudflared` installed, logged in via\n# `cloudflared tunnel login`):\n#   cloudflared tunnel create home-edge\n#     -> writes ~/.cloudflared/<tunnel-id>.json \u2014 copy that file into the\n#        secrets/ folder (not config/) as <tunnel-id>.json (matches\n#        `credentials-file:` below)\n#   cloudflared tunnel route dns home-edge vault.myah-mitchell.com\n#     -> creates the public CNAME automatically; repeat per public hostname added\n\ntunnel: <tunnel-id>\ncredentials-file: /etc/cloudflared/secrets/<tunnel-id>.json\n\ningress:\n  # Vaultwarden (Phase 10) \u2014 routes to the home-internal traefik-server over the\n  # VLAN-routed path via this stack's own traefik-dmz, never a WAN port. Container\n  # name is `traefik-traefik`, not `traefik-dmz-traefik` \u2014 every traefik-* stack's\n  # komodo.env templates PROJECT_NAME to the literal \"traefik\" (safe since these\n  # stacks never share a Docker host), not a folder-matching name.\n  - hostname: vault.myah-mitchell.com\n    service: http://traefik-traefik:80\n\n  # Catch-all: anything not explicitly matched above gets a 404 from cloudflared\n  # itself, rather than being silently proxied somewhere unintended.\n  - service: http_status:404\n",
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "cloudflared-config/config.yml",
+        "project": "traefik"
+      }
+    ],
+    "firewall": [
+      {
+        "allowFrom": "internal",
+        "comment": "Vector syslog",
+        "port": 5140,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "internal",
+        "comment": "Vector syslog",
+        "port": 5140,
+        "proto": "udp"
+      },
+      {
+        "allowFrom": "internal",
+        "comment": "Dozzle agent",
+        "port": 7007,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Traefik HTTP",
+        "port": 80,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Traefik HTTPS",
+        "port": 443,
+        "proto": "tcp"
+      },
+      {
+        "allowFrom": "any",
+        "comment": "Traefik HTTPS (alt)",
+        "port": 8443,
+        "proto": "tcp"
+      }
+    ],
+    "folders": [
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "vmagent-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "vlagent-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "vector-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 100000,
+        "mode": null,
+        "owner": 100000,
+        "path": "dockns-data",
+        "project": "system",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": "0755",
+        "owner": 101000,
+        "path": "traefik",
+        "project": "traefik",
+        "root": "logs"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "traefik-certs",
+        "project": "traefik",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "traefik-plugins",
+        "project": "traefik",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": null,
+        "owner": 101000,
+        "path": "cloudflared-config",
+        "project": "traefik",
+        "root": "volumes"
+      },
+      {
+        "group": 101000,
+        "mode": "0700",
+        "owner": 101000,
+        "path": "cloudflared-secrets",
+        "project": "traefik",
+        "root": "volumes"
+      }
+    ],
+    "names": [
+      "system-agent",
+      "traefik-dmz"
+    ],
+    "projects": [
+      "system",
+      "traefik"
+    ]
+  },
+  "swapMiB": 512
+}

@@ -4,10 +4,9 @@
 
 servers = {
   vh01 = {
-    endpoint       = "https://172.16.0.11:8006/"
-    insecure       = true
-    template_node  = "vh01"
-    template_vm_id = 2604001
+    endpoint     = "https://203.0.113.11:8006/"
+    insecure     = true
+    default_node = "vh01"
   }
 }
 
@@ -17,9 +16,9 @@ vms = {
     cores        = 2
     memory_mb    = 4096
     vlan_id      = 7
-    ipv4_address = "172.16.1.110/24"
-    ipv4_gateway = "172.16.1.1"
-    dns_servers  = ["172.16.1.1"]
+    ipv4_address = "192.0.2.110/24"
+    ipv4_gateway = "192.0.2.1"
+    dns_servers  = ["192.0.2.1"]
 
     extra_disks = {
       persist = { interface = "scsi2", size_gb = 20 }
