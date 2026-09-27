@@ -1,0 +1,26 @@
+---
+# Runs once, on the control node, for every host in the play. A full clone
+# rather than a shallow one, since nix reads the checkout as a git repo and
+# wants its history.
+- name: Clone/update nixos-fleet on the control node
+  ansible.builtin.git:
+    repo: "{{ nixos_repo_url }}"
+    dest: "{{ nixos_local_checkout }}"
+    version: "{{ nixos_repo_version }}"
+    force: true
+  delegate_to: localhost
+  become: false
+  run_once: true
+  # A scratch checkout on the control node, needed for a check-mode run too.
+  check_mode: false
+
+- name: Find the nix binary
+  ansible.builtin.command:
+    cmd: sh -c 'command -v nix'
+  register: nixos_nix_lookup
+  changed_when: false
+  check_mode: false
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when: nixos_nix_binary | length == 0

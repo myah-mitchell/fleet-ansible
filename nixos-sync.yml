@@ -1,0 +1,79 @@
+---
+# Writes the files the nixos-fleet flake builds the hosts from, for every host
+# in the inventory with NIXOS true: nixos/fleet.json, the values every host
+# shares, and nixos/hosts/<host>.json, one host's network, features and stacks,
+# into nixos/ next to the inventory. Point it at the private repo's inventory,
+# then review the diff and commit it there:
+#
+#   ansible-playbook -i ../fleet-private/hosts.yml nixos-sync.yml
+#
+# Nothing connects to the hosts. Each host's file holds what its stacks need
+# from the host, read from docker-stacks' setup.yaml files, so run it again
+# after changing a host in the inventory, and after a docker-stacks change to
+# a setup.yaml file or a seeded config file. site.yml stops at a host whose
+# committed file is out of date. A file for a host that is no longer a NixOS
+# host is removed, and with it the host's NixOS configuration, but its VM
+# stays until removed from OpenTofu's variables file.
+
+- name: Write the NixOS fleet and host files
+  hosts: all
+  gather_facts: false
+  become: false
+  any_errors_fatal: true
+
+  tasks:
+    - name: Create the folder for the files
+      ansible.builtin.file:
+        path: "{{ inventory_dir }}/nixos/hosts"
+        state: directory
+        mode: "0755"
+      run_once: true
+      delegate_to: localhost
+
+    - name: Write the fleet's file and each host's file
+      ansible.builtin.include_role:
+        name: nixos
+        tasks_from: render
+        public: true
+      when: NIXOS | default(false) | bool
+
+    # One file holds the values every host shares, so no host or group may
+    # set one of them differently from the rest.
+    - name: Check every host gives the same fleet values
+      ansible.builtin.assert:
+        that: not nixos_fleet_file.changed
+        fail_msg: >-
+          {{ inventory_hostname }} sets a value in nixos/fleet.json
+          differently from the host the file was written from (the diff above
+          shows which). Set it once for every NixOS host, under all: vars: or
+          in group_vars/all/.
+        quiet: true
+      when:
+        - NIXOS | default(false) | bool
+        - not ansible_check_mode
+
+    - name: Find the host files already there
+      ansible.builtin.find:
+        paths: "{{ inventory_dir }}/nixos/hosts"
+        patterns: "*.json"
+      register: nixos_sync_existing
+      run_once: true
+      delegate_to: localhost
+
+    # Kept by the whole inventory rather than this play's hosts, so a run with
+    # --limit leaves the other hosts' files alone.
+    - name: Remove the files of hosts that are no longer NixOS hosts
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ nixos_sync_existing.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      when: (item.path | basename | splitext | first) not in keep
+      run_once: true
+      delegate_to: localhost
+      vars:
+        keep: >-
+          {{ groups['all'] | map('extract', hostvars)
+             | selectattr('NIXOS', 'defined') | selectattr('NIXOS')
+             | map(attribute='inventory_hostname') | list }}

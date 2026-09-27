@@ -8,3 +8,4 @@ __pycache__/
 /group_vars/all/private.yml
 /opentofu/
 /komodo/
+/nixos/

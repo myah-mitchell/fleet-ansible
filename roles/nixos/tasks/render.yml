@@ -1,0 +1,153 @@
+---
+# Renders the fleet's values and this host's description as the JSON files the
+# nixos-fleet flake reads. nixos-sync.yml writes them for every NixOS host.
+# site.yml only renders them in check mode, to find out whether the committed
+# copies still match, and never writes them. Everything here runs on the
+# control node.
+- name: Check the inventory sets what a NixOS host needs
+  ansible.builtin.assert:
+    that:
+      - short_name | default('') | length > 0
+      - abbr_name | default('') | length > 0
+      - location_abbr is defined
+      - domain_name | default('') | length > 0
+      - network_gateway | default('') | length > 0
+    fail_msg: >-
+      {{ inventory_hostname }} needs short_name, abbr_name, location_abbr,
+      domain_name and network_gateway, and only location_abbr may be empty.
+      Set them in hosts.yml, on the host, its group, or under all: vars:.
+    quiet: true
+
+- name: Work out the names that follow from the identity values
+  ansible.builtin.include_role:
+    name: provision
+    tasks_from: identity
+
+- name: Start with no stacks
+  ansible.builtin.set_fact:
+    docker_stacks_list: []
+    docker_stacks_setup: []
+    nixos_stack_folders: []
+    nixos_stack_files: []
+    nixos_stack_firewall: []
+
+- name: Work out the stacks this host runs
+  ansible.builtin.include_role:
+    name: stacks
+    tasks_from: list
+    public: true
+  when: nixos_runs_stacks | bool
+
+- name: Check the internal subnet is set when a rule needs it
+  ansible.builtin.assert:
+    that: docker_stacks_internal_subnet | default('') | length > 0
+    fail_msg: >-
+      A stack in {{ docker_stacks_list | join(', ') }} opens a port to the
+      internal subnet. Set docker_stacks_internal_subnet to it in CIDR form.
+    quiet: true
+  when:
+    - FIREWALL | bool
+    - docker_stacks_setup | map(attribute='firewall') | flatten | selectattr('allow_from', 'equalto', 'internal') | list | length > 0
+
+# A mode is a string of octal digits. Unquoted in a setup.yaml, YAML reads it
+# as a number, and the digits are lost before they get here.
+- name: Check every mode is a string of octal digits
+  ansible.builtin.assert:
+    that: item.1.mode is string and item.1.mode is match('^[0-7]{3,4}$')
+    fail_msg: >-
+      {{ item.0.stack }} gives {{ item.1.path }} the mode {{ item.1.mode }}.
+      Quote it in the container's setup.yaml in docker-stacks, as in "0750".
+    quiet: true
+  loop: >-
+    {{ (docker_stacks_setup | subelements('folders'))
+       + (docker_stacks_setup | subelements('files')) }}
+  loop_control:
+    label: "{{ item.0.project }}/{{ item.1.path }}"
+  when: item.1.mode | default(none) is not none
+
+- name: Work out each container's folders
+  ansible.builtin.set_fact:
+    nixos_stack_folders: "{{ nixos_stack_folders + [entry] }}"
+  vars:
+    entry: >-
+      {{ {
+        'project': item.0.project,
+        'root': item.1.root,
+        'path': item.1.path,
+        'owner': item.1.owner,
+        'group': item.1.group,
+        'mode': item.1.mode | default(none)
+      } }}
+  loop: "{{ docker_stacks_setup | subelements('folders') }}"
+  loop_control:
+    label: "{{ item.1.root }}/{{ item.0.project }}/{{ item.1.path }}"
+
+# The flake takes no docker-stacks input, so a seed file travels as its text.
+# The host copies it into place only when nothing is there yet, which keeps a
+# filled-in copy, such as mailrise.conf with its real token, from being
+# replaced by the example.
+- name: Read each container's seed files
+  ansible.builtin.set_fact:
+    nixos_stack_files: "{{ nixos_stack_files + [entry] }}"
+  vars:
+    entry: >-
+      {{ {
+        'project': item.0.project,
+        'path': item.1.path,
+        'owner': item.1.owner,
+        'group': item.1.group,
+        'mode': item.1.mode | default(none),
+        'content': lookup('ansible.builtin.file', docker_stacks_local_checkout ~ '/' ~ item.1.source, rstrip=false)
+      } }}
+  loop: "{{ docker_stacks_setup | subelements('files') }}"
+  loop_control:
+    label: "{{ item.0.project }}/{{ item.1.path }}"
+
+- name: Work out each container's firewall ports
+  ansible.builtin.set_fact:
+    nixos_stack_firewall: "{{ nixos_stack_firewall + [entry] }}"
+  vars:
+    entry: >-
+      {{ {
+        'port': item.1.port | int,
+        'proto': item.1.proto,
+        'allowFrom': item.1.allow_from,
+        'comment': item.1.comment
+      } }}
+  loop: "{{ docker_stacks_setup | subelements('firewall') }}"
+  loop_control:
+    label: "{{ item.0.stack }}: {{ item.1.comment }} ({{ item.1.port }}/{{ item.1.proto }})"
+
+# One file holds the fleet's values, so it is written once, from the first
+# host, and then compared with what every other host gives.
+- name: Write the fleet's file
+  ansible.builtin.copy:
+    content: "{{ nixos_fleet_data | to_nice_json(indent=2, sort_keys=true) }}\n"
+    dest: "{{ nixos_sync_dir }}/fleet.json"
+    mode: "0644"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when: not nixos_sync_check | default(false)
+
+- name: Compare the fleet's file with this host's values
+  ansible.builtin.copy:
+    content: "{{ nixos_fleet_data | to_nice_json(indent=2, sort_keys=true) }}\n"
+    dest: "{{ nixos_sync_dir }}/fleet.json"
+    mode: "0644"
+  register: nixos_fleet_file
+  check_mode: true
+  diff: true
+  delegate_to: localhost
+  become: false
+
+- name: Write this host's file
+  ansible.builtin.copy:
+    content: "{{ nixos_host_data | to_nice_json(indent=2, sort_keys=true) }}\n"
+    dest: "{{ nixos_sync_dir }}/hosts/{{ inventory_hostname }}.json"
+    mode: "0644"
+  register: nixos_host_file
+  check_mode: "{{ nixos_sync_check | default(false) }}"
+  diff: "{{ nixos_sync_check | default(false) }}"
+  delegate_to: localhost
+  become: false

@@ -1,0 +1,93 @@
+---
+# host-state prints one word for the address: installer when the VM is booted
+# from the installer ISO, installed when it runs the fleet's NixOS, and
+# unreachable when nothing answers. Only the first gets an install, so a run
+# against a host that is already built never reinstalls it.
+- name: Ask what the host is running
+  ansible.builtin.command:
+    argv:
+      - "{{ nixos_nix }}"
+      - run
+      - "{{ nixos_local_checkout }}#host-state"
+      - "--"
+      - --user
+      - "{{ ansible_account }}"
+      - "{{ nixos_address }}"
+  register: nixos_host_state
+  changed_when: false
+  failed_when: nixos_host_state.stdout | trim not in ['installer', 'installed', 'unreachable']
+  check_mode: false
+  delegate_to: localhost
+  become: false
+
+# Check mode stops at OpenTofu's plan, so a host whose VM is new has nothing
+# to answer yet.
+- name: Check the host answers
+  ansible.builtin.assert:
+    that: nixos_host_state.stdout | trim != 'unreachable'
+    fail_msg: >-
+      {{ inventory_hostname }} answers at {{ nixos_address }} neither as the
+      installer nor as an installed host. Check that its VM is running, that
+      it booted from the installer ISO or from its disk, and that the control
+      node's SSH key is one the installer and the {{ ansible_account }}
+      account accept.
+    quiet: true
+  when: not ansible_check_mode
+
+# The install partitions the OS and Docker disks, prepares the persistent
+# disk without formatting one that already holds a filesystem, puts the
+# host's SSH keys on it, installs NixOS, and reboots.
+- name: Install NixOS
+  ansible.builtin.command:
+    argv:
+      - "{{ nixos_nix }}"
+      - run
+      - "{{ nixos_local_checkout }}#install-host"
+      - "--"
+      - --fleet
+      - "{{ nixos_fleet_dir }}"
+      - --build-on
+      - "{{ nixos_build_on }}"
+      - "{{ inventory_hostname }}"
+      - "{{ nixos_address }}"
+  changed_when: true
+  delegate_to: localhost
+  become: false
+  when:
+    - nixos_host_state.stdout | trim == 'installer'
+    - not ansible_check_mode
+
+- name: Wait for the host to boot into NixOS
+  ansible.builtin.command:
+    argv:
+      - "{{ nixos_nix }}"
+      - run
+      - "{{ nixos_local_checkout }}#host-state"
+      - "--"
+      - --user
+      - "{{ ansible_account }}"
+      - "{{ nixos_address }}"
+  register: nixos_host_state_installed
+  changed_when: false
+  failed_when: false
+  until: nixos_host_state_installed.stdout | trim == 'installed'
+  retries: "{{ nixos_install_retries }}"
+  delay: "{{ nixos_install_delay }}"
+  delegate_to: localhost
+  become: false
+  when:
+    - nixos_host_state.stdout | trim == 'installer'
+    - not ansible_check_mode
+
+- name: Check the host booted into NixOS
+  ansible.builtin.assert:
+    that: nixos_host_state_installed.stdout | trim == 'installed'
+    fail_msg: >-
+      The install finished, but {{ inventory_hostname }} still answers at
+      {{ nixos_address }} as
+      {{ nixos_host_state_installed.stdout | trim | default('nothing', true) }}.
+      Its console in Proxmox shows how far the boot got.
+    quiet: true
+  when:
+    - nixos_host_state.stdout | trim == 'installer'
+    - not ansible_check_mode

@@ -1,0 +1,27 @@
+---
+# Builds the host's configuration and switches to it. In check mode the
+# configuration is built and the host says what a switch would restart, and
+# nothing is activated. A host that still runs the installer in check mode has
+# nothing to compare with, so it is left out.
+- name: Deploy the host's NixOS configuration
+  ansible.builtin.command:
+    argv:
+      - "{{ nixos_nix }}"
+      - run
+      - "{{ nixos_local_checkout }}#deploy-host"
+      - "--"
+      - --fleet
+      - "{{ nixos_fleet_dir }}"
+      - --user
+      - "{{ ansible_account }}"
+      - --build-on
+      - "{{ nixos_build_on }}"
+      - --action
+      - "{{ 'dry-activate' if ansible_check_mode else 'switch' }}"
+      - "{{ inventory_hostname }}"
+      - "{{ nixos_address }}"
+  changed_when: not ansible_check_mode
+  check_mode: false
+  delegate_to: localhost
+  become: false
+  when: not ansible_check_mode or nixos_host_state.stdout | trim == 'installed'

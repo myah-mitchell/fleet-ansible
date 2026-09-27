@@ -1,0 +1,4 @@
+---
+- name: Include NixOS Host Tasks
+  ansible.builtin.include_tasks: nixos.yml
+  when: NIXOS | bool

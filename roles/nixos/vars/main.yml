@@ -1,0 +1,61 @@
+---
+nixos_nix: "{{ nixos_nix_binary if nixos_nix_binary | length > 0 else nixos_nix_lookup.stdout }}"
+nixos_sync_dir: "{{ inventory_dir }}/nixos"
+nixos_address: "{{ ansible_host | default(inventory_hostname) }}"
+nixos_host_name: "{{ serverHostname | default(inventory_hostname, true) | lower }}"
+nixos_runs_stacks: "{{ (DOCKER | bool) and (docker_stacks | default([]) | length > 0) }}"
+
+
+# Written as single expressions, so every number, boolean and list keeps its
+# type on the way into the JSON.
+nixos_fleet_data: >-
+  {{ {
+    'shortName': short_name,
+    'abbrName': abbr_name,
+    'locationAbbr': location_abbr | default('', true),
+    'domainName': domain_name,
+    'locationDomain': location_domain_name,
+    'timeZone': ntp_timezone,
+    'adminName': admin_name,
+    'adminList': admin_list,
+    'clientAccount': client_account,
+    'deployAccount': ansible_account,
+    'adminSshKeys': admin_ssh_public_keys,
+    'deploySshKeys': ansible_ssh_public_keys,
+    'clientSshKeys': client_ssh_public_keys,
+    'caCertificates': ca_certificates,
+    'ntpServers': ntp_servers,
+    'sshBannerBody': ssh_legal_banner_body,
+    'komodoCoreAddress': komodo_core_address,
+    'komodoCorePublicKey': komodo_core_public_key
+  } }}
+nixos_host_data: >-
+  {{ {
+    'hostName': nixos_host_name,
+    'network': {
+      'interface': network_interface,
+      'address': nixos_address,
+      'prefixLength': network_prefix_length | int,
+      'gateway': network_gateway,
+      'dns': network_dns
+    },
+    'features': {
+      'firewall': FIREWALL | bool,
+      'docker': DOCKER | bool,
+      'komodo': KOMODO | bool,
+      'nodeExporter': NODE_EXPORTER | bool,
+      'fail2ban': FAIL2BAN | bool,
+      'auditd': AUDITD | bool,
+      'mail': MAIL | bool,
+      'mosh': MOSH | bool
+    },
+    'swapMiB': swap_size_mib | int,
+    'internalSubnet': docker_stacks_internal_subnet | default(''),
+    'stacks': {
+      'names': docker_stacks_list,
+      'projects': docker_stacks_setup | map(attribute='project') | unique | list,
+      'folders': nixos_stack_folders | unique | list,
+      'files': nixos_stack_files | unique | list,
+      'firewall': nixos_stack_firewall | unique | list
+    }
+  } }}

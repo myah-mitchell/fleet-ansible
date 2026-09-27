@@ -3,25 +3,8 @@
 #  ansible.builtin.debug:
 #    var: ansible_facts
 
-- name: "Setting Var: admin_name={{ abbr_name|lower }}admin"
-  ansible.builtin.set_fact:
-    admin_name: "{{ abbr_name|lower }}admin"
-  when: admin_name | length == 0
-
-- name: "Setting Var: admin_email={{ abbr_name|lower }}admin@{{ domain_name|lower }}"
-  ansible.builtin.set_fact:
-    admin_email: "{{ abbr_name|lower }}admin@{{ domain_name|lower }}"
-  when: admin_list | length == 0
-
-- name: "Setting Var: admin_list={{ abbr_name|lower }}admins@{{ domain_name|lower }}"
-  ansible.builtin.set_fact:
-    admin_list: "{{ abbr_name|lower }}admins@{{ domain_name|lower }}"
-  when: admin_list | length == 0
-
-- name: "Setting Var: location_domain_name={{ location_abbr|lower + '.' if location_abbr else '' }}{{ domain_name|lower }}"
-  ansible.builtin.set_fact:
-    location_domain_name: "{{ location_abbr|lower + '.' if location_abbr else '' }}{{ domain_name|lower }}"
-  when: location_domain_name | length == 0
+- name: Include Identity Tasks
+  ansible.builtin.import_tasks: identity.yml
 
 - name: "Setting Var: serverHostname={{ ansible_facts.hostname }}"
   ansible.builtin.set_fact:

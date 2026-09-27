@@ -1,0 +1,23 @@
+---
+# Works out the names that follow from the identity values: the admin account,
+# its mail addresses, and the location's domain. Nothing here reads a fact from
+# the host, so the nixos role runs it too, on the control node.
+- name: "Setting Var: admin_name={{ abbr_name|lower }}admin"
+  ansible.builtin.set_fact:
+    admin_name: "{{ abbr_name|lower }}admin"
+  when: admin_name | length == 0
+
+- name: "Setting Var: admin_email={{ abbr_name|lower }}admin@{{ domain_name|lower }}"
+  ansible.builtin.set_fact:
+    admin_email: "{{ abbr_name|lower }}admin@{{ domain_name|lower }}"
+  when: admin_list | length == 0
+
+- name: "Setting Var: admin_list={{ abbr_name|lower }}admins@{{ domain_name|lower }}"
+  ansible.builtin.set_fact:
+    admin_list: "{{ abbr_name|lower }}admins@{{ domain_name|lower }}"
+  when: admin_list | length == 0
+
+- name: "Setting Var: location_domain_name={{ location_abbr|lower + '.' if location_abbr else '' }}{{ domain_name|lower }}"
+  ansible.builtin.set_fact:
+    location_domain_name: "{{ location_abbr|lower + '.' if location_abbr else '' }}{{ domain_name|lower }}"
+  when: location_domain_name | length == 0

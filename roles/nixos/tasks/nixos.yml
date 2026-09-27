@@ -1,0 +1,29 @@
+---
+# The flake builds the host from the committed files, not from what this run
+# works out, so the two have to agree before anything is installed or deployed.
+- name: Render the fleet's file and this host's file
+  ansible.builtin.include_tasks: render.yml
+  vars:
+    nixos_sync_check: true
+
+- name: Check the committed files match the inventory
+  ansible.builtin.assert:
+    that:
+      - not nixos_fleet_file.changed
+      - not nixos_host_file.changed
+    fail_msg: >-
+      {{ nixos_sync_dir }}/fleet.json or
+      {{ nixos_sync_dir }}/hosts/{{ inventory_hostname }}.json does not match
+      what the inventory and docker-stacks give for this host (the diff above
+      shows how). Run nixos-sync.yml against this inventory, then commit and
+      push what it writes.
+    quiet: true
+
+- name: Check out nixos-fleet
+  ansible.builtin.include_tasks: checkout.yml
+
+- name: Install NixOS where the host runs the installer
+  ansible.builtin.include_tasks: install.yml
+
+- name: Deploy the host's configuration
+  ansible.builtin.include_tasks: deploy.yml

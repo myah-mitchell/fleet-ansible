@@ -1,0 +1,86 @@
+---
+#### NIXOS role builds the hosts that run NixOS, through the nixos-fleet flake.
+#### Ansible configures nothing on such a host and runs no Python on it. Every
+#### task here runs on the control node, and the flake's own commands do the
+#### SSH.
+####
+#### The flake reads what a host is from two kinds of JSON file in the private
+#### repo, next to hosts.yml: nixos/fleet.json, the values every host shares,
+#### and nixos/hosts/<host>.json, one host's network, features and stacks.
+#### nixos-sync.yml writes them from the inventory and docker-stacks, and they
+#### are committed. This role renders them again, stops if a committed copy
+#### differs, installs NixOS when the host is booted into the installer, then
+#### deploys the host's configuration.
+
+# True on a host that is a NixOS VM built by site.yml. Set it in the inventory,
+# on the host or its group.
+NIXOS: false
+
+# The host's network. ansible_host is its address, and network_gateway has no
+# default, so every NixOS host or its group sets one. OpenTofu's variables file
+# repeats the address, prefix length and gateway, and site.yml stops when the
+# two disagree.
+network_prefix_length: 24
+network_dns: "{{ [network_gateway] }}"
+network_interface: "ens18"
+
+# Size of the swap file, in MiB. 0 means none.
+swap_size_mib: 0
+
+# What the host runs, as the inventory's usual flags. Each one becomes a key of
+# the features object in the host's file.
+FIREWALL: false
+DOCKER: false
+KOMODO: false
+NODE_EXPORTER: false
+FAIL2BAN: true
+AUDITD: false
+MAIL: true
+MOSH: true
+
+# The accounts every host gets. ansible_account is the deploy account, the one
+# site.yml and Semaphore connect as. It has passwordless sudo and is a nix
+# trusted user. admin_name is worked out from abbr_name by the provision role.
+ansible_account: "ansible"
+client_account: "clientuser"
+
+# SSH public keys per account. Empty by default. Real values belong in the
+# private repo's group_vars/all/private.yml.
+admin_ssh_public_keys: []
+ansible_ssh_public_keys: []
+client_ssh_public_keys: "{{ admin_ssh_public_keys }}"
+
+# The rest of what every host shares. ca_certificates is a list of
+# {name, content}, and ntp_servers a list of names or addresses.
+ca_certificates: []
+ntp_servers: []
+ntp_timezone: "America/Chicago"
+ssh_legal_banner_body: ""
+
+# Where Periphery finds Komodo Core, and Core's public key. Neither is secret.
+komodo_core_address: ""
+komodo_core_public_key: ""
+
+# The nixos-fleet repo, checked out once per run on the control node. The
+# flake's commands and the installer ISO are run and built from this checkout.
+nixos_repo_url: "https://github.com/{{ github_user }}/nixos-fleet.git"
+nixos_repo_version: "main"
+nixos_local_checkout: "/tmp/ansible-nixos-fleet-checkout"
+
+# The checkout of the private repo that the flake takes as its fleet input: the
+# inventory's own folder, where nixos-sync.yml writes the files. Nix reads the
+# files git tracks there and nothing else, so a file has to be committed, or at
+# least added, before the flake sees it.
+nixos_fleet_dir: "{{ inventory_dir }}"
+
+# "remote" has the control node evaluate the configuration and the host build
+# and download it, which keeps builds out of Semaphore's container. "local"
+# builds on the control node and copies the result over.
+nixos_build_on: "remote"
+
+# Path to the nix binary. Empty looks it up on PATH.
+nixos_nix_binary: ""
+
+# How long to wait for a host to boot into NixOS after an install.
+nixos_install_retries: 60
+nixos_install_delay: 10
