@@ -16,5 +16,6 @@
   "ntpServers": [],
   "shortName": "EXAMPLE",
   "sshBannerBody": "",
+  "sshBannerName": "EXAMPLE",
   "timeZone": "America/Chicago"
 }

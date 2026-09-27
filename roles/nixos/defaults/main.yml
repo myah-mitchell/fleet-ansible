@@ -55,6 +55,9 @@ client_ssh_public_keys: "{{ admin_ssh_public_keys }}"
 ca_certificates: []
 ntp_servers: []
 ntp_timezone: "America/Chicago"
+# The SSH banner: a name drawn in large letters, and the text below it. The
+# Proxmox hosts take the same two values through the ssh role.
+ssh_legal_banner_name: "{{ short_name }}"
 ssh_legal_banner_body: ""
 
 # Where Periphery finds Komodo Core, and Core's public key. Neither is secret.

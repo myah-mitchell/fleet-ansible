@@ -25,6 +25,7 @@ nixos_fleet_data: >-
     'clientSshKeys': client_ssh_public_keys,
     'caCertificates': ca_certificates,
     'ntpServers': ntp_servers,
+    'sshBannerName': ssh_legal_banner_name,
     'sshBannerBody': ssh_legal_banner_body,
     'komodoCoreAddress': komodo_core_address,
     'komodoCorePublicKey': komodo_core_public_key
