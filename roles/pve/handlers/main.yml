@@ -24,7 +24,3 @@
 - name: ifreload
   ansible.builtin.command:
     cmd: ifreload -a
-
-- name: template_build
-  ansible.builtin.command:
-    cmd: /usr/local/bin/create-cloud-init-template.sh

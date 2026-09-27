@@ -3,47 +3,16 @@ PVE: false
 pve_group: "{{ target }}"
 pve_base_dir: "/etc/pve"
 
-# VMs stamped out from the cloud-init template built by this role (see
-# templates/cloudinit-vendor.yml.j2) clone the public ansible repo and, if a
-# token is set, the private repo too, and run against the private repo's
-# inventory. Empty by default: the template then bootstraps with just the
-# public repo's sanitized example data. The URL must be HTTPS. Set ansible_private_repo_token to a read-only PAT for it in a
-# private group_vars/all/private.yml, never here.
-ansible_private_repo_url: "https://github.com/{{ github_user }}/fleet-private"
-ansible_private_repo_token: ""
-
-# What the vendor snippet does on a clone's first boot. "provision" runs
-# provision.yml on the VM itself against the ubuntu_docker example host, for a
-# clone made by hand. "minimal" only starts the guest agent and creates the
-# ansible_account login with ansible_ssh_public_keys, leaving provisioning and
-# the package upgrade to site.yml over SSH, where the VM's own inventory entry
-# applies. The snippet is shared by every clone on the node, so switching to
-# minimal also stops hand-made clones from provisioning themselves.
-pve_cloudinit_mode: "provision"
-
-# PVE hosts that form one Proxmox cluster set the same name here, in hosts.yml.
-# A standalone server leaves it unset and is a cluster of its own. Every node
-# gets the vendor snippet, but only a cluster's first PVE host in inventory
-# order builds the cloud-init template, and the vms role clones from there, so
-# that host is the template_node of its server in the private repo's
-# opentofu/prod.tfvars.
-# Deliberately not given a default, which would make every server one cluster.
-# pve_cluster_name: "lab"
-
-# The Ubuntu release the cloud-init template is built from. The template's
-# VMID, name, and tag all derive from the version, so moving the fleet to a new
-# release starts with these two lines. The new template is built next to the
-# old one, which stays in place and is no longer refreshed.
-pve_template_ubuntu_version: "26.04"
-pve_template_ubuntu_release: "resolute"
-
-# Disk sizes for the template, in GB. scsi0 is the OS disk and scsi1 becomes
-# /var/lib/docker. Neither holds anything worth keeping, so a rebuilt VM gets
-# fresh copies of both. A VM's persistent disk (scsi2, mounted at /srv/persist) is
-# deliberately not in the template. It is added per VM with qm set, sized for
-# that host, so a rebuilt VM can take the old one over rather than get a blank.
-pve_template_root_disk_size: 20
-pve_template_docker_disk_size: 40
+# The installer ISO every new VM boots from, built from the nixos-fleet flake
+# with the private repo as its fleet input, so it carries the fleet's admin SSH
+# keys. It is built once per run on the control node and copied to every PVE
+# host's `local` storage, where OpenTofu's installer_iso finds it as
+# local:iso/nixos-fleet-installer.iso. A VM only reads it until NixOS is
+# installed, so replacing it never touches a running host.
+#
+# Skipped when the inventory has no nixos/fleet.json next to it, so the example
+# inventory needs no nix. Run nixos-sync.yml and commit what it writes first.
+pve_installer_iso_path: "/var/lib/vz/template/iso/nixos-fleet-installer.iso"
 
 pve_enterprise_repo: false
 pve_passthrough: true

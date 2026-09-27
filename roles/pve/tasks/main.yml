@@ -10,7 +10,7 @@
     - pve-passthrough
     - pve-network
     - pve-tls
-    - pve-cloudinit
+    - pve-installer-iso
 
 - name: Include PVE (Proxmox) General Setup Tasks
   ansible.builtin.include_tasks: pve.yml
@@ -47,8 +47,14 @@
   tags:
     - pve-tls
 
-- name: Include Cloud-Init Tasks
-  ansible.builtin.include_tasks: pve-cloudinit.yml
-  when: PVE
+- name: Include Installer ISO Tasks
+  ansible.builtin.include_tasks: pve-installer-iso.yml
+  args:
+    apply:
+      tags:
+        - pve-installer-iso
+  when:
+    - PVE
+    - (inventory_dir ~ '/nixos/fleet.json') is file
   tags:
-    - pve-cloudinit
+    - pve-installer-iso
