@@ -32,7 +32,15 @@
   run_once: true
 
 # The store path is the ISO itself, or a folder that holds it.
-- name: Find the ISO in what was built
+- name: Look at what was built
+  ansible.builtin.stat:
+    path: "{{ pve_installer_iso_build.stdout_lines | last }}"
+  register: pve_installer_iso_store
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Find the ISO in the folder that was built
   ansible.builtin.find:
     paths: "{{ pve_installer_iso_build.stdout_lines | last }}"
     patterns: "*.iso"
@@ -41,10 +49,11 @@
   delegate_to: localhost
   become: false
   run_once: true
+  when: pve_installer_iso_store.stat.isdir | default(false)
 
 - name: Copy the installer ISO to the PVE host
   ansible.builtin.copy:
-    src: "{{ (pve_installer_iso_found.files | map(attribute='path') | first) | default(pve_installer_iso_build.stdout_lines | last) }}"
+    src: "{{ (pve_installer_iso_found.files | default([]) | map(attribute='path') | first) | default(pve_installer_iso_build.stdout_lines | last) }}"
     dest: "{{ pve_installer_iso_path }}"
     owner: root
     group: root
