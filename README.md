@@ -116,7 +116,7 @@ On later runs, drop `-u root` and the password options. The `users` role has cre
 ansible-playbook -i ../fleet-private/hosts.yml site.yml -e target=ex01
 ```
 
-A host that already runs NixOS is never installed again, so a second run only deploys what changed. With `--check`, nothing is installed, and the deploy builds the configuration and reports what it would change without switching to it.
+A host that already runs NixOS is never installed again, so a second run only deploys what changed. With `--check`, nothing is installed, and for a host that already runs NixOS the deploy evaluates its configuration on the control node and prints what would be built, without building it or reaching the host.
 
 ### What builds the host
 
@@ -151,7 +151,7 @@ The ISO carries the fleet's installer SSH host key, which `install-host` checks 
 nix run <flake>#new-installer-key -- --fleet ../fleet-private
 ```
 
-The ISO is built from the files git tracks in the private repo, so commit `nixos/fleet.json` and `secrets/installer.yaml` before building, and build again after the SSH keys in `fleet.json` change. The role stops when either file is untracked or has uncommitted changes, and skips the build when the private repo has no `nixos/fleet.json`.
+The ISO is built from the files git tracks in the private repo, so commit `nixos/fleet.json` and `secrets/installer.yaml` before building, and build again after the SSH keys in `fleet.json` change. The role stops when either file is untracked or has uncommitted changes, and skips the build when the private repo has no `nixos/fleet.json`. In check mode it checks the two files and neither builds nor copies the ISO.
 
 The setup `site.yml` needs, the environment variables it reads, and what it overwrites are in [How a host is built](https://myah-mitchell.github.io/docs/fleet-bootstrap/concepts/how-a-host-is-built/).
 

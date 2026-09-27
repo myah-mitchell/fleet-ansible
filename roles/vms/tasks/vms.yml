@@ -28,8 +28,11 @@
         version: "{{ vms_repo_version }}"
         depth: 1
         force: true
-      # A scratch checkout on the control node, needed for a check-mode plan too.
+      # A scratch checkout on the control node, needed for a check-mode plan
+      # too. Updating it changes nothing this run manages, so it never reports
+      # a change.
       check_mode: false
+      changed_when: false
 
     - name: Find the tofu binary
       ansible.builtin.command:

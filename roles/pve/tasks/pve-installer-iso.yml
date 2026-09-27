@@ -96,7 +96,7 @@
     # play. build-installer decrypts the fleet's installer host key, builds
     # the ISO with it, and prints the path of the ISO. nix builds nothing when
     # the flake, the fleet's files and the key are unchanged since the last
-    # run.
+    # run. Check mode builds nothing, and so has nothing to copy.
     - name: Build the installer ISO on the control node
       ansible.builtin.command:
         argv:
@@ -108,10 +108,10 @@
           - "{{ nixos_fleet_dir }}"
       register: pve_installer_iso_build
       changed_when: false
-      check_mode: false
       delegate_to: localhost
       become: false
       run_once: true
+      when: not ansible_check_mode
 
     - name: Copy the installer ISO to the PVE host
       ansible.builtin.copy:
@@ -120,3 +120,11 @@
         owner: root
         group: root
         mode: "0644"
+      when: not ansible_check_mode
+
+    - name: Say the ISO is left alone in check mode
+      ansible.builtin.debug:
+        msg: >-
+          Check mode builds no installer ISO and copies none, so whether the
+          ISO on {{ inventory_hostname }} is current is not checked.
+      when: ansible_check_mode
