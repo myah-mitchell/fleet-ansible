@@ -132,6 +132,23 @@
 # The host copies it into place only when nothing is there yet, which keeps a
 # filled-in copy, such as mailrise.conf with its real token, from being
 # replaced by the example.
+# A seed file's text ends up in a committed host file and in the host's
+# world-readable Nix store, so it has to come from docker-stacks' containers
+# folder and nowhere else on the control node. realpath also follows links.
+- name: Check each seed file comes from docker-stacks' containers folder
+  ansible.builtin.assert:
+    that:
+      - >-
+        (docker_stacks_local_checkout ~ '/' ~ item.1.source) | realpath
+        is match((docker_stacks_local_checkout | realpath | regex_escape) ~ '/containers/')
+    fail_msg: >-
+      {{ item.0.project }}: the seed file source {{ item.1.source }} is not a
+      file under containers/ in the docker-stacks checkout.
+    quiet: true
+  loop: "{{ docker_stacks_setup | subelements('files') }}"
+  loop_control:
+    label: "{{ item.0.project }}/{{ item.1.path }}"
+
 - name: Read each container's seed files
   ansible.builtin.set_fact:
     nixos_stack_files: "{{ nixos_stack_files + [entry] }}"
