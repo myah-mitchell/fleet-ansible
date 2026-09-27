@@ -32,9 +32,9 @@ komodo_api_key: "{{ lookup('ansible.builtin.env', 'KOMODO_API_KEY') }}"
 komodo_api_secret: "{{ lookup('ansible.builtin.env', 'KOMODO_API_SECRET') }}"
 
 # The Server this host's Stacks attach to, which is also the name Periphery
-# connects as: the host's own name. Set komodo_connect_as on a host whose
-# Periphery connects under another name.
-komodo_stacks_server: "{{ komodo_connect_as | default(serverHostname | lower) }}"
+# connects as. The flake sets that to the host's hostName, so it is the same
+# expression as the nixos role's.
+komodo_stacks_server: "{{ serverHostname | default(inventory_hostname, true) | lower }}"
 
 # The Resource Sync in Komodo that reads the files, and where komodo-sync.yml
 # writes them: a folder in the private repo, next to the inventory. The Resource
