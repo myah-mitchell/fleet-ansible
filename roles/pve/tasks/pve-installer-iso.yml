@@ -11,19 +11,18 @@
         - pve-installer-iso
 
 # The build runs once, on the control node, for every PVE host in the play.
-# nix prints the store path of what it built, and builds nothing when the
-# flake and the fleet's files are unchanged since the last run.
+# build-installer decrypts the fleet's installer host key, builds the ISO
+# with it, and prints the path of the ISO. nix builds nothing when the
+# flake, the fleet's files and the key are unchanged since the last run.
 - name: Build the installer ISO on the control node
   ansible.builtin.command:
     argv:
       - "{{ nixos_nix }}"
-      - build
-      - "{{ nixos_local_checkout }}#installer-iso"
-      - --override-input
-      - fleet
-      - "git+file://{{ nixos_fleet_dir }}"
-      - --no-link
-      - --print-out-paths
+      - run
+      - "{{ nixos_local_checkout }}#build-installer"
+      - "--"
+      - --fleet
+      - "{{ nixos_fleet_dir }}"
   register: pve_installer_iso_build
   changed_when: false
   check_mode: false
@@ -31,29 +30,9 @@
   become: false
   run_once: true
 
-# The store path is the ISO itself, or a folder that holds it.
-- name: Look at what was built
-  ansible.builtin.stat:
-    path: "{{ pve_installer_iso_build.stdout_lines | last }}"
-  register: pve_installer_iso_store
-  delegate_to: localhost
-  become: false
-  run_once: true
-
-- name: Find the ISO in the folder that was built
-  ansible.builtin.find:
-    paths: "{{ pve_installer_iso_build.stdout_lines | last }}"
-    patterns: "*.iso"
-    recurse: true
-  register: pve_installer_iso_found
-  delegate_to: localhost
-  become: false
-  run_once: true
-  when: pve_installer_iso_store.stat.isdir | default(false)
-
 - name: Copy the installer ISO to the PVE host
   ansible.builtin.copy:
-    src: "{{ (pve_installer_iso_found.files | default([]) | map(attribute='path') | first) | default(pve_installer_iso_build.stdout_lines | last) }}"
+    src: "{{ pve_installer_iso_build.stdout_lines | last }}"
     dest: "{{ pve_installer_iso_path }}"
     owner: root
     group: root
