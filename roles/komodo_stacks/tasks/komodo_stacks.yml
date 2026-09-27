@@ -7,19 +7,6 @@
     tasks_from: list
     public: true
 
-- name: Check Komodo's API address and key are set
-  ansible.builtin.assert:
-    that:
-      - komodo_api_url | length > 0
-      - komodo_api_key | length > 0
-      - komodo_api_secret | length > 0
-    fail_msg: >-
-      Set komodo_api_url (it defaults to komodo_core_address), and the API key
-      and secret of a Komodo service user, in KOMODO_API_KEY and
-      KOMODO_API_SECRET in the environment or as komodo_api_key and
-      komodo_api_secret.
-    quiet: true
-
 # Komodo syncs the committed file, not what this run works out, so the two
 # have to agree before anything is synced.
 - name: Render this host's sync file
@@ -37,147 +24,164 @@
       commit and push what it writes.
     quiet: true
 
-# Periphery connects out to Core, and a host onboarded in this run creates its
-# Server as it does. Until then Core answers with an error, which is retried.
-- name: Wait for this host's Periphery to connect to Komodo
-  ansible.builtin.uri:
-    url: "{{ komodo_api_url }}/read/GetServerState"
-    method: POST
-    headers: "{{ komodo_api_headers }}"
-    body_format: json
-    body:
-      server: "{{ komodo_stacks_server }}"
-    validate_certs: "{{ komodo_api_validate_certs }}"
-    status_code: [200, 400, 404, 500]
-  register: komodo_server_state
-  until: komodo_server_state.status == 200 and komodo_server_state.json.status == 'Ok'
-  retries: "{{ komodo_stacks_server_retries }}"
-  delay: "{{ komodo_stacks_server_delay }}"
-  failed_when: false
-  delegate_to: localhost
-  become: false
-  check_mode: false
-  no_log: true
+# Before Komodo Core runs there is no API key to set, which is how the first
+# run of km01, the host that runs Core, goes: the stage says so and stops
+# here, and the run still ends without a failure.
+- name: Say why this host's Stacks are not deployed
+  ansible.builtin.debug:
+    msg: >-
+      Skipping the deploy of {{ inventory_hostname }}'s Stacks, since
+      Komodo's API is not set up here (missing:
+      {{ komodo_stacks_api_missing | join(', ') }}). Set komodo_api_url (it
+      defaults to komodo_core_address), and the API key and secret of a
+      Komodo service user, in KOMODO_API_KEY and KOMODO_API_SECRET in the
+      environment or as komodo_api_key and komodo_api_secret, then run the
+      komodo stage again.
+  when: komodo_stacks_api_missing | length > 0
 
-- name: Check this host's Periphery is connected
-  ansible.builtin.assert:
-    that:
-      - komodo_server_state.status | default(0) == 200
-      - komodo_server_state.json.status | default('') == 'Ok'
-    fail_msg: >-
-      {% if komodo_server_state.status | default(0) in [401, 403] %}
-      Komodo refused the API key and secret
-      {% else %}
-      Komodo has no connected Server named {{ komodo_stacks_server }}.
-      A new host joins through the komodo-onboarding-key secret in the private
-      repo's secrets/fleet.yaml, and Periphery's log on the host says why it
-      has not
-      {% endif %}
-      (HTTP {{ komodo_server_state.status | default('none') }}:
-      {{ komodo_server_state.json | default(komodo_server_state.msg | default('')) }}).
-    quiet: true
+# Check mode stops before this block: it would only wait for a Periphery that
+# may not exist yet, and every step after that changes something in Komodo.
+- name: Deploy this host's Stacks
+  when:
+    - komodo_stacks_api_missing | length == 0
+    - not ansible_check_mode
+  block:
+    # Periphery connects out to Core, and a host onboarded in this run creates
+    # its Server as it does. Until then Core answers with an error, which is
+    # retried.
+    - name: Wait for this host's Periphery to connect to Komodo
+      ansible.builtin.uri:
+        url: "{{ komodo_api_url }}/read/GetServerState"
+        method: POST
+        headers: "{{ komodo_api_headers }}"
+        body_format: json
+        body:
+          server: "{{ komodo_stacks_server }}"
+        validate_certs: "{{ komodo_api_validate_certs }}"
+        status_code: [200, 400, 404, 500]
+      register: komodo_server_state
+      until: komodo_server_state.status == 200 and komodo_server_state.json.status == 'Ok'
+      retries: "{{ komodo_stacks_server_retries }}"
+      delay: "{{ komodo_stacks_server_delay }}"
+      failed_when: false
+      delegate_to: localhost
+      become: false
+      no_log: true
 
-# Only this host's Stacks, so a Stack in the sync for a host that does not
-# exist yet, or is down, has no part in this run. Each Stack has deploy = true,
-# so the sync deploys any that it creates or changes, or that are not running.
-- name: Sync this host's Stacks
-  ansible.builtin.uri:
-    url: "{{ komodo_api_url }}/execute/RunSync"
-    method: POST
-    headers: "{{ komodo_api_headers }}"
-    body_format: json
-    body:
-      sync: "{{ komodo_sync_name }}"
-      resource_type: Stack
-      resources: "{{ komodo_sync_stacks | map(attribute='name') | list }}"
-    validate_certs: "{{ komodo_api_validate_certs }}"
-    status_code: [200, 400, 403, 404, 500]
-  register: komodo_sync_run
-  changed_when: true
-  failed_when: false
-  delegate_to: localhost
-  become: false
-  no_log: true
-  when: not ansible_check_mode
+    - name: Check this host's Periphery is connected
+      ansible.builtin.assert:
+        that:
+          - komodo_server_state.status | default(0) == 200
+          - komodo_server_state.json.status | default('') == 'Ok'
+        fail_msg: >-
+          {% if komodo_server_state.status | default(0) in [401, 403] %}
+          Komodo refused the API key and secret
+          {% else %}
+          Komodo has no connected Server named {{ komodo_stacks_server }}.
+          A new host joins through the komodo-onboarding-key secret in the
+          private repo's secrets/fleet.yaml, and Periphery's log on the host
+          says why it has not
+          {% endif %}
+          (HTTP {{ komodo_server_state.status | default('none') }}:
+          {{ komodo_server_state.json | default(komodo_server_state.msg | default('')) }}).
+        quiet: true
 
-- name: Check the sync started
-  ansible.builtin.assert:
-    that: komodo_sync_run.status == 200
-    fail_msg: >-
-      Komodo would not run the {{ komodo_sync_name }} Resource Sync
-      (HTTP {{ komodo_sync_run.status }}):
-      {{ komodo_sync_run.json | default(komodo_sync_run.msg | default('')) }}
-    quiet: true
-  when: not ansible_check_mode
+    # Only this host's Stacks, so a Stack in the sync for a host that does not
+    # exist yet, or is down, has no part in this run. Each Stack has
+    # deploy = true, so the sync deploys any that it creates or changes, or
+    # that are not running.
+    - name: Sync this host's Stacks
+      ansible.builtin.uri:
+        url: "{{ komodo_api_url }}/execute/RunSync"
+        method: POST
+        headers: "{{ komodo_api_headers }}"
+        body_format: json
+        body:
+          sync: "{{ komodo_sync_name }}"
+          resource_type: Stack
+          resources: "{{ komodo_sync_stacks | map(attribute='name') | list }}"
+        validate_certs: "{{ komodo_api_validate_certs }}"
+        status_code: [200, 400, 403, 404, 500]
+      register: komodo_sync_run
+      changed_when: true
+      failed_when: false
+      delegate_to: localhost
+      become: false
+      no_log: true
 
-# An Update's id comes back as {"_id": {"$oid": "..."}}.
-- name: Wait for the sync to finish
-  ansible.builtin.uri:
-    url: "{{ komodo_api_url }}/read/GetUpdate"
-    method: POST
-    headers: "{{ komodo_api_headers }}"
-    body_format: json
-    body:
-      id: "{{ komodo_sync_run.json._id['$oid'] | default(komodo_sync_run.json._id) }}"
-    validate_certs: "{{ komodo_api_validate_certs }}"
-  register: komodo_sync_update
-  until: komodo_sync_update.json.status | default('') == 'Complete'
-  retries: "{{ komodo_stacks_deploy_retries }}"
-  delay: "{{ komodo_stacks_deploy_delay }}"
-  delegate_to: localhost
-  become: false
-  no_log: true
-  when: not ansible_check_mode
+    - name: Check the sync started
+      ansible.builtin.assert:
+        that: komodo_sync_run.status == 200
+        fail_msg: >-
+          Komodo would not run the {{ komodo_sync_name }} Resource Sync
+          (HTTP {{ komodo_sync_run.status }}):
+          {{ komodo_sync_run.json | default(komodo_sync_run.msg | default('')) }}
+        quiet: true
 
-- name: Check the sync succeeded
-  ansible.builtin.assert:
-    that: komodo_sync_update.json.success
-    fail_msg: >-
-      The {{ komodo_sync_name }} Resource Sync failed. The Update in Komodo has
-      the full log. Failed stages:
-      {{ komodo_sync_update.json.logs | default([]) | rejectattr('success')
-         | map(attribute='stage') | join(', ') }}.
-      {{ komodo_sync_update.json.logs | default([]) | rejectattr('success')
-         | map(attribute='stderr') | join(' ') | truncate(1500) }}
-    quiet: true
-  when: not ansible_check_mode
+    # An Update's id comes back as {"_id": {"$oid": "..."}}.
+    - name: Wait for the sync to finish
+      ansible.builtin.uri:
+        url: "{{ komodo_api_url }}/read/GetUpdate"
+        method: POST
+        headers: "{{ komodo_api_headers }}"
+        body_format: json
+        body:
+          id: "{{ komodo_sync_run.json._id['$oid'] | default(komodo_sync_run.json._id) }}"
+        validate_certs: "{{ komodo_api_validate_certs }}"
+      register: komodo_sync_update
+      until: komodo_sync_update.json.status | default('') == 'Complete'
+      retries: "{{ komodo_stacks_deploy_retries }}"
+      delay: "{{ komodo_stacks_deploy_delay }}"
+      delegate_to: localhost
+      become: false
+      no_log: true
 
-- name: Wait for this host's Stacks to be running
-  ansible.builtin.uri:
-    url: "{{ komodo_api_url }}/read/ListStacks"
-    method: POST
-    headers: "{{ komodo_api_headers }}"
-    body_format: json
-    body:
-      query:
-        names: "{{ names }}"
-      limit: 0
-    validate_certs: "{{ komodo_api_validate_certs }}"
-  register: komodo_stack_states
-  until: >-
-    komodo_stack_states.json | default([]) | selectattr('info.state', 'equalto', 'running')
-    | list | length == names | length
-  retries: "{{ komodo_stacks_deploy_retries }}"
-  delay: "{{ komodo_stacks_deploy_delay }}"
-  failed_when: false
-  delegate_to: localhost
-  become: false
-  no_log: true
-  vars:
-    names: "{{ komodo_sync_stacks | map(attribute='name') | list }}"
-  when: not ansible_check_mode
+    - name: Check the sync succeeded
+      ansible.builtin.assert:
+        that: komodo_sync_update.json.success
+        fail_msg: >-
+          The {{ komodo_sync_name }} Resource Sync failed. The Update in Komodo
+          has the full log. Failed stages:
+          {{ komodo_sync_update.json.logs | default([]) | rejectattr('success')
+             | map(attribute='stage') | join(', ') }}.
+          {{ komodo_sync_update.json.logs | default([]) | rejectattr('success')
+             | map(attribute='stderr') | join(' ') | truncate(1500) }}
+        quiet: true
 
-- name: Check this host's Stacks are running
-  ansible.builtin.assert:
-    that: not_running | length == 0
-    fail_msg: >-
-      These Stacks are not running: {{ not_running | join(', ') }}. Each
-      Stack's latest Update in Komodo says why.
-    quiet: true
-  vars:
-    listed: "{{ komodo_stack_states.json | default([]) }}"
-    not_running: >-
-      {{ komodo_sync_stacks | map(attribute='name')
-         | difference(listed | selectattr('info.state', 'equalto', 'running') | map(attribute='name'))
-         | list }}
-  when: not ansible_check_mode
+    - name: Wait for this host's Stacks to be running
+      ansible.builtin.uri:
+        url: "{{ komodo_api_url }}/read/ListStacks"
+        method: POST
+        headers: "{{ komodo_api_headers }}"
+        body_format: json
+        body:
+          query:
+            names: "{{ names }}"
+          limit: 0
+        validate_certs: "{{ komodo_api_validate_certs }}"
+      register: komodo_stack_states
+      until: >-
+        komodo_stack_states.json | default([]) | selectattr('info.state', 'equalto', 'running')
+        | list | length == names | length
+      retries: "{{ komodo_stacks_deploy_retries }}"
+      delay: "{{ komodo_stacks_deploy_delay }}"
+      failed_when: false
+      delegate_to: localhost
+      become: false
+      no_log: true
+      vars:
+        names: "{{ komodo_sync_stacks | map(attribute='name') | list }}"
+
+    - name: Check this host's Stacks are running
+      ansible.builtin.assert:
+        that: not_running | length == 0
+        fail_msg: >-
+          These Stacks are not running: {{ not_running | join(', ') }}. Each
+          Stack's latest Update in Komodo says why.
+        quiet: true
+      vars:
+        listed: "{{ komodo_stack_states.json | default([]) }}"
+        not_running: >-
+          {{ komodo_sync_stacks | map(attribute='name')
+             | difference(listed | selectattr('info.state', 'equalto', 'running') | map(attribute='name'))
+             | list }}

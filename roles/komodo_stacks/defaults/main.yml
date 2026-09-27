@@ -9,7 +9,9 @@
 #### into the private repo next to hosts.yml. Komodo reads the committed files.
 #### This role renders the host's file again, stops if the committed copy
 #### differs, waits for the host's Periphery, then runs the sync for this
-#### host's Stacks only and waits for them to be running.
+#### host's Stacks only and waits for them to be running. Without Komodo's API
+#### key and secret it stops after the check and says why, and in check mode
+#### it stops there too.
 ####
 #### A Stack's Environment comes from that file, so an edit made to it in the
 #### Komodo UI is undone by the next sync.

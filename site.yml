@@ -5,7 +5,9 @@
 #   2. wait    waits for each host to answer on its SSH port
 #   3. nixos   installs NixOS where the VM runs the installer, then deploys
 #              the host's configuration
-#   4. komodo  syncs each host's Stacks into Komodo and waits for them to run
+#   4. komodo  syncs each host's Stacks into Komodo and waits for them to run,
+#              or says why not when Komodo's API key is not set, as on the
+#              first run of km01, before Komodo Core exists
 #
 # The VMs are described in opentofu/<env>.tfvars, the hosts in nixos/, and the
 # Stacks in komodo/stacks/, all in the private repo next to the inventory.

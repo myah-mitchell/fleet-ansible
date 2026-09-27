@@ -2,3 +2,10 @@
 komodo_api_headers:
   X-Api-Key: "{{ komodo_api_key }}"
   X-Api-Secret: "{{ komodo_api_secret }}"
+
+# The API values that are not set. Empty when the stage can reach Komodo.
+komodo_stacks_api_missing: >-
+  {{ [('komodo_api_url' if komodo_api_url | length == 0 else ''),
+      ('the API key' if komodo_api_key | length == 0 else ''),
+      ('the API secret' if komodo_api_secret | length == 0 else '')]
+     | reject('equalto', '') | list }}

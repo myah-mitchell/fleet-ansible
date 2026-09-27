@@ -116,7 +116,13 @@ On later runs, drop `-u root` and the password options. The `users` role has cre
 ansible-playbook -i ../fleet-private/hosts.yml site.yml -e target=ex01
 ```
 
-A host that already runs NixOS is never installed again, so a second run only deploys what changed. With `--check`, nothing is installed, and for a host that already runs NixOS the deploy evaluates its configuration on the control node and prints what would be built, without building it or reaching the host.
+A host that already runs NixOS is never installed again, so a second run only deploys what changed. With `--check`, nothing is installed, and for a host that already runs NixOS the deploy evaluates its configuration on the control node and prints what would be built, without building it or reaching the host. The komodo stage checks the committed sync file, and reaches neither Periphery nor the Resource Sync.
+
+The komodo stage needs Komodo's API key and secret, in `KOMODO_API_KEY` and `KOMODO_API_SECRET`. When they are not set, the stage says so and skips the deploy, and the run still ends without a failure. That is how the first run of the first host goes: km01, the host that runs Komodo Core, has no Core yet to make a key. The run creates km01's VM, installs and deploys NixOS, and deploys no Stacks. Once Core is running and has a service user, run the komodo stage again with the key set:
+
+```bash
+ansible-playbook -i ../fleet-private/hosts.yml site.yml -e target=km01 --tags komodo
+```
 
 ### What builds the host
 
