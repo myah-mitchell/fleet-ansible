@@ -37,6 +37,33 @@
       Set them in hosts.yml, on the host, its group, or under all: vars:.
     quiet: true
 
+# The deploy keys are how site.yml reaches an installed host, and the admin
+# keys how a person does. The installer ISO lets in both. With either list
+# empty, a host has an account that nobody can log in to again.
+- name: Check the admin and deploy SSH keys are set
+  ansible.builtin.assert:
+    that:
+      - admin_ssh_public_keys | length > 0
+      - ansible_ssh_public_keys | length > 0
+    fail_msg: >-
+      admin_ssh_public_keys and ansible_ssh_public_keys each need at least one
+      SSH public key, or the host has an account nobody can log in to. Set
+      them in the private repo's group_vars/all/private.yml.
+    quiet: true
+
+# The files, the flake's attribute and the secrets go by the inventory name,
+# and the VM, the Komodo Server and the host's own hostName by serverHostname.
+# Two different names would give one host two identities that nothing links.
+- name: Check the inventory name is the host's name
+  ansible.builtin.assert:
+    that: inventory_hostname == nixos_host_name
+    fail_msg: >-
+      {{ inventory_hostname }} has serverHostname
+      {{ serverHostname | default('') }}, which gives the host the name
+      {{ nixos_host_name }}. Name the host in the inventory by its
+      serverHostname in lower case, or set serverHostname to match.
+    quiet: true
+
 - name: Work out the names that follow from the identity values
   ansible.builtin.include_role:
     name: provision

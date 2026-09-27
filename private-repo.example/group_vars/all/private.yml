@@ -6,11 +6,18 @@
 #### here. They go in secrets.sops.yaml, next to this file, which sops
 #### encrypts. See README.md in this folder.
 
-# SSH public keys per account. Empty here, so no keys are installed. The
-# ansible keys are what site.yml and Semaphore connect with. See
-# roles/nixos/defaults/main.yml and roles/users/defaults/main.yml.
-admin_ssh_public_keys: []
-ansible_ssh_public_keys: []
+# SSH public keys per account. The ansible keys are what site.yml and
+# Semaphore connect with. See roles/nixos/defaults/main.yml and
+# roles/users/defaults/main.yml. A NixOS host needs at least one of each, and
+# nixos-sync.yml stops without them.
+#
+# These two are the example keys of nixos-fleet's example fleet, there only so
+# this example renders. Replace both with your own before anything is built
+# or provisioned from a copy of this file.
+admin_ssh_public_keys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJlfGdV3OUejKj9G9L2B3AdrXvVpRP0Y/YIWRxXt8xYC example-admin"
+ansible_ssh_public_keys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII+LvUx8tun9nH3oBy5YNg4kqFXE43Qbtpjl4cBrvS8W example-deploy"
 # client_ssh_public_keys defaults to admin_ssh_public_keys. Only set this if
 # the end-user login (client_account) should have a different key than admin:
 # client_ssh_public_keys: []
