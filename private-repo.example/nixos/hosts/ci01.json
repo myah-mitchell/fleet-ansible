@@ -31,7 +31,7 @@
         "project": "semaphore"
       },
       {
-        "content": "# mailrise.conf \u2014 copy to mailrise.conf and fill in the ntfy token.\n#\n# Mailrise routes by recipient address. A key with no domain, like \"backups\",\n# matches only <key>@mailrise.xyz, mailrise's own placeholder domain, and mail\n# to any other domain is refused. Point PBS/PVE notification targets at the\n# matching address below.\n\nlisten:\n  smtp:\n    hostname: 0.0.0.0\n    port: 8025\n\nconfigs:\n  # PBS and PVE notifications -> to: backups@mailrise.xyz\n  backups:\n    urls:\n      - \"ntfy://REPLACE_WITH_NTFY_TOKEN@ntfy/alerts-backups\"\n\n  # Everything else -> to: infra@mailrise.xyz. vmalert's Alertmanager webhook\n  # can hit ntfy's own HTTP API directly instead of going through mailrise; see\n  # Phase 2's vmalert -> ntfy wiring.\n  infra:\n    urls:\n      - \"ntfy://REPLACE_WITH_NTFY_TOKEN@ntfy/alerts-infra\"\n",
+        "content": "# mailrise.conf. Copy to mailrise.conf and fill in the ntfy token.\n#\n# Mailrise routes by recipient address. A key with no domain, like \"backups\",\n# matches only <key>@mailrise.xyz, mailrise's own placeholder domain, and mail\n# to any other domain is refused. Point PBS/PVE notification targets at the\n# matching address below.\n\nlisten:\n  smtp:\n    hostname: 0.0.0.0\n    port: 8025\n\nconfigs:\n  # PBS and PVE notifications -> to: backups@mailrise.xyz\n  backups:\n    urls:\n      - \"ntfy://REPLACE_WITH_NTFY_TOKEN@ntfy/alerts-backups\"\n\n  # Everything else -> to: infra@mailrise.xyz. vmalert's Alertmanager webhook\n  # can hit ntfy's own HTTP API directly instead of going through mailrise; see\n  # Phase 2's vmalert -> ntfy wiring.\n  infra:\n    urls:\n      - \"ntfy://REPLACE_WITH_NTFY_TOKEN@ntfy/alerts-infra\"\n",
         "group": 101000,
         "mode": "0600",
         "owner": 101000,
@@ -175,6 +175,14 @@
         "mode": null,
         "owner": 101001,
         "path": "semaphore-tmp",
+        "project": "semaphore",
+        "root": "volumes"
+      },
+      {
+        "group": 101001,
+        "mode": null,
+        "owner": 101001,
+        "path": "nix-data",
         "project": "semaphore",
         "root": "volumes"
       },
