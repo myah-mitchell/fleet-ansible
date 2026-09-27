@@ -2,7 +2,8 @@
 # Builds the host's configuration and switches to it. In check mode it runs
 # dry-build instead, which evaluates the configuration on the control node and
 # prints what would be built, and neither builds anything nor reaches the host.
-# A host that is not installed yet in check mode is left out.
+# A host that is not installed yet in check mode is left out. Like the
+# install, it evaluates the host on the control node, so one host at a time.
 - name: Deploy the host's NixOS configuration
   ansible.builtin.command:
     argv:
@@ -24,4 +25,5 @@
   check_mode: false
   delegate_to: localhost
   become: false
+  throttle: 1
   when: not ansible_check_mode or nixos_host_state.stdout | trim == 'installed'

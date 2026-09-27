@@ -36,7 +36,10 @@
 
 # The install partitions the OS and Docker disks, prepares the persistent
 # disk without formatting one that already holds a filesystem, puts the
-# host's SSH keys on it, installs NixOS, and reboots.
+# host's SSH keys on it, installs NixOS, and reboots. Evaluating a host takes
+# about 1 GB of memory on the control node, more than once per install, so
+# the hosts go one at a time, which keeps Semaphore's container inside its
+# memory limit.
 - name: Install NixOS
   ansible.builtin.command:
     argv:
@@ -53,6 +56,7 @@
   changed_when: true
   delegate_to: localhost
   become: false
+  throttle: 1
   when:
     - nixos_host_state.stdout | trim == 'installer'
     - not ansible_check_mode
