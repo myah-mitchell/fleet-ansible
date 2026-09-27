@@ -30,7 +30,7 @@
     dest: "{{ komodo_sync_dir }}/{{ inventory_hostname }}.toml"
     mode: "0644"
   register: komodo_sync_file
-  check_mode: "{{ komodo_sync_check | default(false) }}"
+  check_mode: "{{ (komodo_sync_check | default(false)) or ansible_check_mode }}"
   diff: "{{ komodo_sync_check | default(false) }}"
   delegate_to: localhost
   become: false

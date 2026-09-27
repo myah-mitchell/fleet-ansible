@@ -22,6 +22,8 @@
   any_errors_fatal: true
 
   tasks:
+    # Made in check mode too, since an empty folder changes nothing and the
+    # comparisons below need a place to compare against.
     - name: Create the folder for the files
       ansible.builtin.file:
         path: "{{ inventory_dir }}/nixos/hosts"
@@ -29,6 +31,7 @@
         mode: "0755"
       run_once: true
       delegate_to: localhost
+      check_mode: false
 
     - name: Write the fleet's file and each host's file
       ansible.builtin.include_role:
@@ -37,8 +40,9 @@
         public: true
       when: NIXOS | default(false) | bool
 
-    # One file holds the values every host shares, so no host or group may
-    # set one of them differently from the rest.
+    # The render checks the whole inventory before it writes the file. This
+    # compares what each host in the play works out, role defaults included,
+    # with what was written.
     - name: Check every host gives the same fleet values
       ansible.builtin.assert:
         that: not nixos_fleet_file.changed

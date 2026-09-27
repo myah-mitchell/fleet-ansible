@@ -4,6 +4,25 @@
 # site.yml only renders them in check mode, to find out whether the committed
 # copies still match, and never writes them. Everything here runs on the
 # control node.
+
+# One file holds the fleet's values, so every NixOS host in the inventory has
+# to give the same ones, not only the hosts in this play. Otherwise a run with
+# --limit would write the file from the one host it was limited to. It runs
+# first, before the identity tasks below set admin_name and the rest as facts
+# for this play's hosts only, so hostvars hold what the inventory sets.
+- name: Check every NixOS host in the inventory gives the same fleet values
+  ansible.builtin.assert:
+    that: nixos_fleet_mismatch | from_json | length == 0
+    fail_msg: >-
+      NixOS hosts in the inventory set these fleet values differently, shown
+      with the hosts that give each value:
+      {{ nixos_fleet_mismatch | from_json | join('; ') }}. nixos/fleet.json
+      holds one value for every host, so set each of them once, under
+      all: vars: or in group_vars/all/.
+    quiet: true
+  run_once: true
+  when: not nixos_sync_check | default(false)
+
 - name: Check the inventory sets what a NixOS host needs
   ansible.builtin.assert:
     that:
@@ -118,8 +137,8 @@
   loop_control:
     label: "{{ item.0.stack }}: {{ item.1.comment }} ({{ item.1.port }}/{{ item.1.proto }})"
 
-# One file holds the fleet's values, so it is written once, from the first
-# host, and then compared with what every other host gives.
+# With the inventory in agreement, the file is written once, from the first
+# host, and then compared with what every other host in the play gives.
 - name: Write the fleet's file
   ansible.builtin.copy:
     content: "{{ nixos_fleet_data | to_nice_json(indent=2, sort_keys=true) }}\n"
@@ -147,7 +166,7 @@
     dest: "{{ nixos_sync_dir }}/hosts/{{ inventory_hostname }}.json"
     mode: "0644"
   register: nixos_host_file
-  check_mode: "{{ nixos_sync_check | default(false) }}"
+  check_mode: "{{ (nixos_sync_check | default(false)) or ansible_check_mode }}"
   diff: "{{ nixos_sync_check | default(false) }}"
   delegate_to: localhost
   become: false

@@ -29,6 +29,53 @@ nixos_fleet_data: >-
     'komodoCoreAddress': komodo_core_address,
     'komodoCorePublicKey': komodo_core_public_key
   } }}
+
+# The variables nixos_fleet_data is made from, and the ones it follows from.
+# Keep the two in step.
+nixos_fleet_inputs:
+  - short_name
+  - abbr_name
+  - location_abbr
+  - domain_name
+  - location_domain_name
+  - ntp_timezone
+  - admin_name
+  - admin_list
+  - client_account
+  - ansible_account
+  - admin_ssh_public_keys
+  - ansible_ssh_public_keys
+  - client_ssh_public_keys
+  - ca_certificates
+  - ntp_servers
+  - ssh_legal_banner_name
+  - ssh_legal_banner_body
+  - komodo_core_address
+  - komodo_core_public_key
+
+# Each of those that the NixOS hosts in the whole inventory do not all set to
+# the same value, with the hosts grouped by the value they give, as a JSON
+# list, since a template with more than one statement renders to text. Read from
+# hostvars, which hold what the inventory sets and no role default, so a
+# variable no host sets counts as one value, and one that some hosts set and
+# others leave to the default counts as two.
+nixos_fleet_mismatch: >-
+  {%- set hosts = [] -%}
+  {%- for host in groups['all'] if hostvars[host].NIXOS | default(false) | bool -%}
+    {{- hosts.append(host) or '' -}}
+  {%- endfor -%}
+  {%- set found = [] -%}
+  {%- for name in nixos_fleet_inputs -%}
+    {%- set by_value = {} -%}
+    {%- for host in hosts -%}
+      {%- set value = hostvars[host][name] | to_json if name in hostvars[host] else '(not set)' -%}
+      {{- by_value.update({value: by_value.get(value, []) + [host]}) or '' -}}
+    {%- endfor -%}
+    {%- if by_value | length > 1 -%}
+      {{- found.append(name ~ ' (' ~ (by_value.values() | map('join', ', ') | join(' / ')) ~ ')') or '' -}}
+    {%- endif -%}
+  {%- endfor -%}
+  {{ found | to_json }}
 nixos_host_data: >-
   {{ {
     'hostName': nixos_host_name,

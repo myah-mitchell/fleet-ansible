@@ -28,6 +28,8 @@
         public: true
       when: runs_stacks | bool
 
+    # Made in check mode too, since an empty folder changes nothing and the
+    # comparisons below need a place to compare against.
     - name: Create the sync folder
       ansible.builtin.file:
         path: "{{ inventory_dir }}/komodo/stacks"
@@ -35,6 +37,7 @@
         mode: "0755"
       run_once: true
       delegate_to: localhost
+      check_mode: false
 
     - name: Write each host's sync file
       ansible.builtin.include_role:
