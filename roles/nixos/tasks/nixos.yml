@@ -19,6 +19,50 @@
       push what it writes.
     quiet: true
 
+# The flake takes the fleet as a git+file input, which sees the files git
+# tracks, uncommitted edits included, and nothing else. A file that is on disk
+# and not committed passes the check above and still either never reaches the
+# host or builds one that matches nothing in git's history.
+- name: Look for uncommitted files the flake reads
+  ansible.builtin.command:
+    argv:
+      - git
+      - -C
+      - "{{ nixos_fleet_dir }}"
+      - status
+      - --porcelain
+      - --ignored
+      - --untracked-files=all
+      - --
+      - nixos
+      - secrets
+  register: nixos_fleet_status
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: Check the files the flake reads are committed
+  ansible.builtin.assert:
+    that:
+      - nixos_fleet_status.rc == 0
+      - nixos_fleet_status.stdout | length == 0
+    fail_msg: >-
+      {% if nixos_fleet_status.rc != 0 -%}
+      {{ nixos_fleet_dir }} is not a git checkout
+      ({{ nixos_fleet_status.stderr | trim }}). The flake reads the fleet from
+      git, so the private repo has to be one.
+      {% else -%}
+      Under {{ nixos_fleet_dir }}, git has these files in nixos/ or secrets/ as
+      changed, untracked or ignored:
+      {{ nixos_fleet_status.stdout_lines | map('trim') | join('; ') }}. The
+      flake reads only what git tracks, so git add and commit them in the
+      private repo, then run this again.
+      {%- endif %}
+    quiet: true
+
 - name: Check out nixos-fleet
   ansible.builtin.include_tasks: checkout.yml
 

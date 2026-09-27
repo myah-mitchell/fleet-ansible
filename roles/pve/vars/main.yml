@@ -1,3 +1,9 @@
 ---
 # vars file for pve role
 BWS_Secret: "{{ BWS_Read.value }}"
+
+# True when the private repo has a NixOS fleet: a nixos/fleet.json that git
+# tracks, or one on disk that is not committed yet.
+pve_installer_iso_fleet: >-
+  {{ 'nixos/fleet.json' in pve_installer_iso_tracked.stdout_lines | default([])
+     or (inventory_dir ~ '/nixos/fleet.json') is file }}

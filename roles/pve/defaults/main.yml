@@ -5,13 +5,16 @@ pve_base_dir: "/etc/pve"
 
 # The installer ISO every new VM boots from, built from the nixos-fleet flake
 # with the private repo as its fleet input, so it carries the fleet's admin SSH
-# keys. It is built once per run on the control node and copied to every PVE
-# host's `local` storage, where OpenTofu's installer_iso finds it as
-# local:iso/nixos-fleet-installer.iso. A VM only reads it until NixOS is
-# installed, so replacing it never touches a running host.
+# keys and its installer SSH host key. It is built once per run on the control
+# node and copied to every PVE host's `local` storage, where OpenTofu's
+# installer_iso finds it as local:iso/nixos-fleet-installer.iso. A VM only
+# reads it until NixOS is installed, so replacing it never touches a running
+# host.
 #
-# Skipped when the inventory has no nixos/fleet.json next to it, so the example
-# inventory needs no nix. Run nixos-sync.yml and commit what it writes first.
+# Skipped when the private repo has no nixos/fleet.json, so an inventory with
+# no NixOS hosts needs no nix. Otherwise the run stops unless nixos/fleet.json
+# and secrets/installer.yaml are committed there: run nixos-sync.yml, make the
+# installer key once with nixos-fleet's new-installer-key, and commit both.
 pve_installer_iso_path: "/var/lib/vz/template/iso/nixos-fleet-installer.iso"
 
 pve_enterprise_repo: false

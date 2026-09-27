@@ -47,14 +47,14 @@
   tags:
     - pve-tls
 
+# The tasks work out from git whether the private repo has a NixOS fleet, and
+# skip the ISO when it has none.
 - name: Include Installer ISO Tasks
   ansible.builtin.include_tasks: pve-installer-iso.yml
   args:
     apply:
       tags:
         - pve-installer-iso
-  when:
-    - PVE
-    - (inventory_dir ~ '/nixos/fleet.json') is file
+  when: PVE
   tags:
     - pve-installer-iso
