@@ -18,6 +18,10 @@
   delegate_to: localhost
   become: false
   run_once: true
+  # A scratch checkout on the control node, which a check-mode run reads too.
+  # Updating it changes nothing this run manages, so it never reports a change.
+  check_mode: false
+  changed_when: false
 
 # scripts/build.py writes stacks/<name>/setup.yaml from the setup.yaml of every
 # container the stack uses, following include and keeping only the entries for
