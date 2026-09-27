@@ -14,6 +14,7 @@
     entry:
       name: "{{ item ~ '-' ~ komodo_stacks_server if item in komodo_stacks_per_host else item }}"
       run_directory: "stacks/{{ item }}"
+      ignore_services: "{{ komodo_stack_ignore_services[item] | default([]) }}"
       environment: >-
         {{ lookup('ansible.builtin.file', docker_stacks_local_checkout ~ '/stacks/' ~ item ~ '/komodo.env')
            | komodo_env(komodo_stack_env[item] | default({}), {

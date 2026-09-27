@@ -18,4 +18,7 @@ branch = {{ komodo_stacks_branch | toml_string }}
 run_directory = {{ stack.run_directory | toml_string }}
 file_paths = ["compose.yaml"]
 environment = {{ stack.environment | toml_string }}
+{% if stack.ignore_services %}
+ignore_services = [{{ stack.ignore_services | map('toml_string') | join(', ') }}]
+{% endif %}
 {% endfor %}

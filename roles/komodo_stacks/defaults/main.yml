@@ -75,6 +75,13 @@ komodo_stacks_bootstrap_auth_chain: "chain-no-auth@file"
 # Each key must have a line in that stack's komodo.env.
 komodo_stack_env: {}
 
+# Services Komodo leaves out when it works out a Stack's state, keyed by stack
+# folder name. For a service that runs once and exits, which would otherwise
+# show the whole Stack as unhealthy. A stack with no entry gets no line.
+komodo_stack_ignore_services:
+  semaphore-server:
+    - nix
+
 # How long to wait for the sync, and then for the Stacks to be running.
 komodo_stacks_deploy_retries: 90
 komodo_stacks_deploy_delay: 10
