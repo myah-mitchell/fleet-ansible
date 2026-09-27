@@ -10,7 +10,7 @@
 - name: "Setting Var: admin_email={{ abbr_name|lower }}admin@{{ domain_name|lower }}"
   ansible.builtin.set_fact:
     admin_email: "{{ abbr_name|lower }}admin@{{ domain_name|lower }}"
-  when: admin_list | length == 0
+  when: admin_email | length == 0
 
 - name: "Setting Var: admin_list={{ abbr_name|lower }}admins@{{ domain_name|lower }}"
   ansible.builtin.set_fact:

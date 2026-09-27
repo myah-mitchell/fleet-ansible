@@ -102,12 +102,13 @@
   become_user: "{{ dotfiles_target_user }}"
 
 # No flags: --windows (Windows/Alacritty PowerShell setup) and --claude (the
-# Claude Code stack) are both opt-in as of dotfiles' install.sh — these are
-# plain Ubuntu Docker VMs, not WSL2, and servers/shared boxes are meant to
-# skip both by default (see CLAUDE.md's Flags section), so the plain,
-# flag-less run already does the right thing.
-# No --cargo: cargo_install() already tries cargo-binstall (prebuilt binary) before
-# falling back to compiling from source — see dotfiles/install.sh and CLAUDE.md.
+# Claude Code stack) are both opt-in as of dotfiles' install.sh. The hosts
+# provision.yml runs against are servers, not WSL2, and servers/shared boxes
+# are meant to skip both by default (see CLAUDE.md's Flags section), so the
+# plain, flag-less run already does the right thing.
+# No --cargo: cargo_install() already tries cargo-binstall (prebuilt binary)
+# before falling back to compiling from source (see dotfiles/install.sh and
+# CLAUDE.md).
 - name: Run install.sh as the target user
   ansible.builtin.command:
     cmd: "{{ dotfiles_remote_path }}/install.sh"

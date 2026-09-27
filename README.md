@@ -2,7 +2,7 @@
 
 Ansible playbooks with two jobs. `provision.yml` configures and hardens Proxmox hosts (VE, PBS and PMG) and other Debian-based hosts. `site.yml` builds the fleet's NixOS VMs: it creates each VM, installs NixOS on it, and deploys its stacks through Komodo.
 
-The repo runs as it is against the included example inventory, `hosts.yml`, which holds placeholder data only: no real hostnames, keys, certificates or credentials. To layer your real data on top, see [Using your own environment](#using-your-own-environment).
+`provision.yml` runs as it is against the included example inventory, `hosts.yml`, which holds placeholder data only: no real hostnames, keys, certificates or credentials. `site.yml` does not: it needs the generated files in a private repo, and the repo's root has no `nixos/` folder, so it stops at its first check. `nixos-sync.yml` can be tried against `hosts.yml`, and [private-repo.example](private-repo.example/) shows the whole private repo. To layer your real data on top, see [Using your own environment](#using-your-own-environment).
 
 ## What the control node needs
 
