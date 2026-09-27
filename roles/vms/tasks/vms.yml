@@ -97,9 +97,9 @@
           {{ ansible_play_hosts_all | map('extract', hostvars, 'vms_name')
              | map('regex_replace', '^', 'module.vm["') | map('regex_replace', '$', '"]') | list }}
 
-    # The vms output lists every VM in the variables file, created or not,
-    # which is how the later plays tell a VM from a host built by hand. Only a
-    # real apply writes it, so a check-mode run sees it as of the last one.
+    # The vms output lists every VM in the variables file, created or not.
+    # Only a real apply writes it, so a check-mode run sees it as of the last
+    # one.
     - name: Read the VMs OpenTofu knows
       ansible.builtin.command:
         cmd: "{{ vms_tofu }} output -json"
@@ -115,14 +115,22 @@
     vms_known: "{{ (vms_output.stdout | from_json).vms.value | default({}) }}"
   when: vms_name in vms_known
 
-# The address is written twice, once for OpenTofu and once for Ansible, so a
-# mismatch is caught here rather than as a VM nobody can reach.
-- name: Check the VM's address matches ansible_host
+# The network is written twice, once for OpenTofu, which hands it to the
+# installer, and once in the inventory, which the installed host is built from.
+# A mismatch is caught here rather than as a VM that answers while it installs
+# and is gone after its first boot. The nixos role's default for
+# network_prefix_length is repeated here, since its defaults stay in its play.
+- name: Check the VM's network matches the inventory
   ansible.builtin.assert:
-    that: vms_vm.ipv4_address == ansible_host | default(inventory_hostname)
+    that:
+      - vms_vm.ipv4_address == ansible_host | default(inventory_hostname)
+      - vms_vm.ipv4_prefix_length | int == network_prefix_length | default(24) | int
+      - vms_vm.ipv4_gateway == network_gateway | default('')
     fail_msg: >-
-      OpenTofu gives {{ vms_name }} the address {{ vms_vm.ipv4_address }}, but
-      its ansible_host in the inventory is {{ ansible_host | default('unset') }}.
+      OpenTofu gives {{ vms_name }} the address {{ vms_vm.ipv4_address }}/{{ vms_vm.ipv4_prefix_length }}
+      and the gateway {{ vms_vm.ipv4_gateway }}. The inventory gives it
+      {{ ansible_host | default('no ansible_host') }}/{{ network_prefix_length | default(24) }}
+      and {{ network_gateway | default('no network_gateway') }}.
       Make the two agree.
     quiet: true
   when: vms_vm is defined

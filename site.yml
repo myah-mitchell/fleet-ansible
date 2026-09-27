@@ -1,19 +1,25 @@
 ---
 # One run from nothing to running stacks, for the hosts in `target`:
 #
-#   1. vms        creates or updates each host's VM through OpenTofu
-#   2. wait       waits for each VM's first boot and cloud-init to finish
-#   3. provision  the usual provision.yml, against the real host names
-#   4. reboot     reboots a new VM once, if provision.yml's upgrade needs it
-#   5. komodo     syncs each host's Stacks into Komodo and waits for them to run
+#   1. vms     creates or updates each host's VM through OpenTofu
+#   2. wait    waits for each host to answer on its SSH port
+#   3. nixos   installs NixOS where the VM runs the installer, then deploys
+#              the host's configuration
+#   4. komodo  syncs each host's Stacks into Komodo and waits for them to run
 #
-# The VMs are described in opentofu/<env>.tfvars and the Stacks in
-# komodo/stacks/, both in the private repo next to the inventory. A host with
-# no VM there skips steps 2 and 4, so this also works against hosts built by
-# hand. provision.yml's identity values and server_password come from the
-# inventory or -e, and are only asked for when neither sets them:
+# The VMs are described in opentofu/<env>.tfvars, the hosts in nixos/, and the
+# Stacks in komodo/stacks/, all in the private repo next to the inventory.
+# nixos-sync.yml and komodo-sync.yml write the last two from the inventory, and
+# this run stops at a host whose committed files are out of date. A new VM is
+# blank and boots the installer ISO, which the pve role puts on each Proxmox
+# host. A host that already runs NixOS is never installed again, so a second
+# run only deploys what changed:
 #
 #   ansible-playbook site.yml -e target=ci01
+#
+# Nothing here runs on the hosts themselves. Every task runs on the control
+# node, which needs nix, and sops with the age key that decrypts the private
+# repo's secrets.
 #
 # See https://myah-mitchell.github.io/docs/fleet-bootstrap/concepts/how-a-host-is-built/
 # for what each stage does, and
@@ -29,107 +35,34 @@
     - role: vms
       tags: vms
 
-- name: Wait for new VMs to finish their first boot
+- name: Wait for the hosts to answer
   hosts: "{{ target }}"
   gather_facts: false
-  become: true
+  become: false
 
   tasks:
-    # Check mode stops at OpenTofu's plan, so there is no new VM to wait for.
-    - name: Wait for the VM's first boot
+    # A new VM answers once it has booted the installer, and a built one as
+    # soon as it is up. Check mode stops at OpenTofu's plan, so there may be
+    # no VM to wait for.
+    - name: Wait for the host's SSH port
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+        port: "{{ ansible_port | default(22) }}"
+        timeout: "{{ site_boot_timeout | default(1800) }}"
+      delegate_to: localhost
       when:
-        - vms_vm is defined
+        - NIXOS | default(false) | bool
         - not ansible_check_mode
       tags: [ vms, wait ]
-      block:
-        # A new VM has a host key nobody has seen. accept-new records it on
-        # first contact and still refuses a key that changes afterwards. Set as
-        # a fact so it carries into provision.yml's plays in this same run.
-        - name: Accept a new VM's host key on first contact
-          ansible.builtin.set_fact:
-            ansible_ssh_extra_args: "{{ (ansible_ssh_extra_args | default('') ~ ' -o StrictHostKeyChecking=accept-new') | trim }}"
-          when:
-            - site_accept_new_host_keys | default(true) | bool
-            - "'StrictHostKeyChecking' not in (ansible_ssh_extra_args | default(''))"
 
-        - name: Wait for the VM to answer over SSH
-          ansible.builtin.wait_for_connection:
-            delay: 5
-            timeout: "{{ site_boot_timeout | default(1800) }}"
-
-        # cloud-init exits 2 when it finished with warnings. Proxmox's
-        # generated user-data still uses a deprecated key, so 2 is the normal
-        # result here. In provision mode the vendor snippet can reboot the VM
-        # once to finish its package upgrade, which drops the connection
-        # partway through the wait. That is what the second wait and check are
-        # for. Minimal mode does not reboot.
-        - name: Wait for cloud-init to finish
-          ansible.builtin.command:
-            cmd: cloud-init status --wait
-          register: site_cloud_init
-          changed_when: false
-          failed_when: false
-          ignore_unreachable: true
-
-        - name: Wait for the VM to come back if it rebooted
-          ansible.builtin.wait_for_connection:
-            delay: 15
-            timeout: "{{ site_boot_timeout | default(1800) }}"
-          when: site_cloud_init.unreachable | default(false) or site_cloud_init.rc | default(0) not in [0, 2]
-
-        - name: Check cloud-init finished
-          ansible.builtin.command:
-            cmd: cloud-init status --wait
-          register: site_cloud_init_final
-          changed_when: false
-          failed_when: site_cloud_init_final.rc not in [0, 2]
-
-- name: Provision
-  ansible.builtin.import_playbook: provision.yml
-
-# The minimal cloud-init snippet leaves the package upgrade to provision.yml,
-# which never reboots. A new VM is rebooted here when the upgrade needs it, so
-# its stacks start on the patched kernel rather than being restarted by the
-# nightly unattended-upgrades reboot. Only on a VM's first run: the marker
-# written at the end keeps later runs from rebooting a host with stacks on it.
-- name: Reboot new VMs if the upgrade needs it
+- name: Install and deploy NixOS
   hosts: "{{ target }}"
   gather_facts: false
-  become: true
+  become: false
 
-  tasks:
-    - name: Reboot on the VM's first run
-      when:
-        - vms_vm is defined
-        - not ansible_check_mode
-      tags: [ vms, reboot ]
-      block:
-        - name: Check whether this VM has finished a run before
-          ansible.builtin.stat:
-            path: "{{ site_first_run_marker }}"
-          register: site_marker
-
-        - name: Check whether the upgrade needs a reboot
-          ansible.builtin.stat:
-            path: /var/run/reboot-required
-          register: site_reboot_required
-          when: not site_marker.stat.exists
-
-        - name: Reboot
-          ansible.builtin.reboot:
-            reboot_timeout: "{{ site_boot_timeout | default(1800) }}"
-          when:
-            - not site_marker.stat.exists
-            - site_reboot_required.stat.exists
-
-        - name: Mark the VM's first run as done
-          ansible.builtin.copy:
-            dest: "{{ site_first_run_marker }}"
-            content: "First site.yml run finished.\n"
-            mode: "0644"
-
-  vars:
-    site_first_run_marker: /var/lib/ansible-site-first-run
+  roles:
+    - role: nixos
+      tags: nixos
 
 - name: Deploy the stacks through Komodo
   hosts: "{{ target }}"
