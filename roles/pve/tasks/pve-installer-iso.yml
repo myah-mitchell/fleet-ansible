@@ -113,13 +113,15 @@
       run_once: true
       when: not ansible_check_mode
 
+    # The ISO holds the installer's private host key, so only root reads it.
+    # QEMU runs as root on Proxmox, and needs no more.
     - name: Copy the installer ISO to the PVE host
       ansible.builtin.copy:
         src: "{{ pve_installer_iso_build.stdout_lines | last }}"
         dest: "{{ pve_installer_iso_path }}"
         owner: root
         group: root
-        mode: "0644"
+        mode: "0600"
       when: not ansible_check_mode
 
     - name: Say the ISO is left alone in check mode
