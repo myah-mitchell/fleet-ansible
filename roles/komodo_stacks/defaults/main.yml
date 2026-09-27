@@ -1,8 +1,8 @@
 ---
 #### KOMODO_STACKS role deploys this host's Stacks through Komodo's Resource
 #### Sync. The stacks come from docker_stacks with the stacks role's bootstrap
-#### swap applied, the same list that role prepared the host with. Everything
-#### here runs on the control node.
+#### swap applied, the same list the host's NixOS configuration is built from.
+#### Everything here runs on the control node.
 ####
 #### The Stacks are defined in one TOML file per host, which komodo-sync.yml
 #### writes from the inventory and each stack's komodo.env in docker-stacks,
@@ -29,8 +29,8 @@ komodo_api_key: "{{ lookup('ansible.builtin.env', 'KOMODO_API_KEY') }}"
 komodo_api_secret: "{{ lookup('ansible.builtin.env', 'KOMODO_API_SECRET') }}"
 
 # The Server this host's Stacks attach to, which is also the name Periphery
-# connects as. The docker role's default for komodo_connect_as is repeated
-# here, for komodo-sync.yml, which does not load that role.
+# connects as: the host's own name. Set komodo_connect_as on a host whose
+# Periphery connects under another name.
 komodo_stacks_server: "{{ komodo_connect_as | default(serverHostname | lower) }}"
 
 # The Resource Sync in Komodo that reads the files, and where komodo-sync.yml
@@ -45,7 +45,7 @@ komodo_stacks_server_retries: 30
 komodo_stacks_server_delay: 10
 
 # Where Komodo pulls each Stack from. Same repo and branch the stacks role
-# prepared the host from.
+# reads each stack's setup.yaml from.
 komodo_stacks_git_provider: "github.com"
 komodo_stacks_repo: "{{ github_user }}/docker-stacks"
 komodo_stacks_branch: "{{ docker_stacks_repo_version }}"

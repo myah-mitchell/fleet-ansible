@@ -1,9 +1,0 @@
----
-- name: Include Docker Stacks Setup Tasks
-  ansible.builtin.include_tasks: stacks.yml
-  args:
-    apply:
-      become: true
-  when:
-    - DOCKER|bool
-    - docker_stacks | length > 0

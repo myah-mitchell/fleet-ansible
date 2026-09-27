@@ -1,7 +1,7 @@
 ---
 # Works out docker_stacks_list and docker_stacks_setup for this host without
-# touching it, so komodo-sync.yml can use the same list the host is prepared
-# with. Everything here runs on the control node.
+# touching it, so nixos-sync.yml and komodo-sync.yml use the same list.
+# Everything here runs on the control node.
 - name: Normalize the stack list
   ansible.builtin.set_fact:
     docker_stacks_list: >-
@@ -63,8 +63,7 @@
 #
 # The inventory holds what a host runs once the site is finished, so nothing
 # there changes at the handover. A stack left wanting something from the fleet
-# comes out of a bootstrapping run instead. Komodo still decides what actually
-# runs; this only prepares the host.
+# comes out of a bootstrapping run instead.
 - name: Drop the stacks that need the rest of the fleet
   ansible.builtin.set_fact:
     docker_stacks_setup: "{{ standalone }}"

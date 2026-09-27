@@ -1,6 +1,6 @@
 ---
-# The same list the stacks role prepared the host with, worked out again here
-# on the control node, since that role's facts and defaults stay in its play.
+# The same list the host's NixOS configuration was built from, worked out
+# again here, since the stacks role's facts and defaults stay in their play.
 - name: Work out the stacks this host runs
   ansible.builtin.include_role:
     name: stacks
@@ -69,8 +69,9 @@
       Komodo refused the API key and secret
       {% else %}
       Komodo has no connected Server named {{ komodo_stacks_server }}.
-      A new host joins through komodo_onboarding_key, and Periphery's log on
-      the host (journalctl --user -u periphery as komodo) says why it has not
+      A new host joins through the komodo-onboarding-key secret in the private
+      repo's secrets/fleet.yaml, and Periphery's log on the host says why it
+      has not
       {% endif %}
       (HTTP {{ komodo_server_state.status | default('none') }}:
       {{ komodo_server_state.json | default(komodo_server_state.msg | default('')) }}).

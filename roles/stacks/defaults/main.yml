@@ -1,29 +1,22 @@
 ---
-#### STACKS role prepares a Docker host for the docker-stacks stacks it will run:
-#### the runtime folders, seeded config files, and firewall ports that each
-#### stack's containers list in their setup.yaml. It deploys nothing. Komodo
-#### still does that.
+#### STACKS role works out which docker-stacks stacks a host runs, and what
+#### each one needs from the host: the runtime folders, seeded config files,
+#### and firewall ports that the stack's containers list in their setup.yaml.
+#### Everything runs on the control node. nixos-sync.yml carries the result to
+#### the host's NixOS configuration, and komodo-sync.yml to Komodo, which
+#### deploys the stacks.
 
-# Stacks to prepare on this host, by folder name under stacks/ in docker-stacks.
-# Empty skips the role. Set it per host in the inventory, or pass it with -e as a
-# list or a comma-separated string.
+# Stacks this host runs, by folder name under stacks/ in docker-stacks. Set it
+# per host in the inventory, or pass it with -e as a list or a comma-separated
+# string.
 docker_stacks: []
 
 # {{ github_user }}/docker-stacks is public, so plain HTTPS with no credential.
 docker_stacks_repo_url: "https://github.com/{{ github_user }}/docker-stacks.git"
 docker_stacks_repo_version: "main"
-# Checked out once per play on the control node (Semaphore, or the host itself
-# under cloud-init), where the setup files are read and config files copied from.
+# Checked out once per play on the control node, where the setup files and the
+# seeded config files are read from.
 docker_stacks_local_checkout: "/tmp/ansible-docker-stacks-checkout"
-
-# Must match GLOBAL_DOCKER_VOLUMES and GLOBAL_DOCKER_LOGS in Komodo.
-docker_stacks_volumes_dir: "/opt/docker/volumes"
-docker_stacks_logs_dir: "/opt/docker/logs"
-
-# Owner of each stack's own logs and volumes folders. The group is the
-# containers' UID 1000 as seen from the host under userns-remap.
-docker_stacks_folder_owner: "{{ admin_name }}"
-docker_stacks_folder_group: 101000
 
 # True only while the site is still being built and the fleet services a host's
 # real stacks need are not up yet. The role then leaves out every stack whose
@@ -31,9 +24,9 @@ docker_stacks_folder_group: 101000
 # the VictoriaMetrics backends, and traefik-agent, which wants tf01's Redis.
 # Set it on the host in the inventory, so its docker_stacks can hold the
 # finished stack list from the day the host is created, and remove it at the
-# handover. komodo-sync.yml reads it too, so regenerate and commit the Komodo
-# sync files after changing it; site.yml stops if they disagree. A one-off run
-# of provision.yml alone can still pass it with -e.
+# handover. nixos-sync.yml and komodo-sync.yml both read it, so run both again
+# and commit what they write after changing it; site.yml stops if they
+# disagree.
 docker_stacks_bootstrap: false
 
 # Stands in for a service that the dropped stacks would have provided, keyed by
@@ -44,6 +37,6 @@ docker_stacks_standins:
   traefik: "traefik-bootstrap"
 
 # CIDR that firewall rules marked `allow_from: internal` are scoped to. Required
-# once any listed stack has such a rule, and the role stops before changing
+# once any listed stack has such a rule, and nixos-sync.yml stops before writing
 # anything if it is empty.
 docker_stacks_internal_subnet: ""
