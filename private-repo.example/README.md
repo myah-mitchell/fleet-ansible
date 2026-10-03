@@ -18,8 +18,7 @@ The public ansible repo runs on its own against the example inventory in its roo
 | `secrets/fleet.yaml` | You, through sops | The secrets every NixOS host reads |
 | `secrets/hosts/<host>.yaml` | You, through sops | One host's own secrets. Optional |
 | `secrets/host-keys/<host>.yaml` | `new-host-key` | The host's SSH host keys, which no host can read |
-| `secrets/installer.yaml` | `new-installer-key` | The installer ISO's SSH host key, which no host can read |
-| `.sops.yaml` | You, `new-host-key` and `new-installer-key` | Who can decrypt each sops file |
+| `.sops.yaml` | You and `new-host-key` | Who can decrypt each sops file |
 
 Each file owns one kind of fact, and the host name links them. `opentofu/prod.tfvars` repeats a VM's address, prefix length and gateway, and `site.yml` fails when they differ from the inventory.
 
@@ -81,10 +80,10 @@ These steps need nix with flakes enabled, sops, and age on the control node. The
    nix run github:myah-mitchell/nixos-fleet#new-host-key -- --fleet ../fleet-private <host>
    ```
 
-7. Make the installer's SSH host key. The installer ISO is built with it, and `install-host` sends a host its keys only to a machine that has it:
+7. In `hosts.yml`, set `pve_ssh_host_key` on each Proxmox VE host to that host's SSH host key. `install-host` logs in to it to read the installer's host key through the VM's guest agent, and accepts no other key from it. Read the key at the host's console, not over the network:
 
    ```bash
-   nix run github:myah-mitchell/nixos-fleet#new-installer-key -- --fleet ../fleet-private
+   cat /etc/ssh/ssh_host_ed25519_key.pub
    ```
 
 8. Write the two secrets files. Each command opens an editor and encrypts on save:

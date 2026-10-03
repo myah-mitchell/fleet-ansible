@@ -151,13 +151,15 @@ ansible-playbook -i ../fleet-private/hosts.yml provision.yml \
   -e target=pve_host --tags pve-installer-iso
 ```
 
-The ISO carries the fleet's installer SSH host key, which `install-host` checks before it sends a host its keys. The key is in the private repo's `secrets/installer.yaml`. Make that file once, where `<flake>` is the nixos-fleet flake, such as `github:myah-mitchell/nixos-fleet`:
+The ISO holds no secret. Its sshd makes a new host key at every boot, and `install-host` reads that key through the VM's guest agent before it sends a host its keys. To do that, the `nixos` role logs in to the VM's Proxmox VE host as the `ansible` account and runs `qm`, so each Proxmox VE host needs `pve_ssh_host_key` in the inventory: its ed25519 SSH host key, as `ssh-ed25519 AAAA...`. Read it at the host's console, not over the network:
 
 ```bash
-nix run <flake>#new-installer-key -- --fleet ../fleet-private
+cat /etc/ssh/ssh_host_ed25519_key.pub
 ```
 
-The ISO is built from the files git tracks in the private repo, so commit `nixos/fleet.json` and `secrets/installer.yaml` before building, and build again after the SSH keys in `fleet.json` change. The role stops when either file is untracked or has uncommitted changes, and skips the build when the private repo has no `nixos/fleet.json`. In check mode it checks the two files and neither builds nor copies the ISO.
+`site.yml` stops before an install when the VM's Proxmox host has no such key.
+
+The ISO is built from the files git tracks in the private repo, so commit `nixos/fleet.json` before building, and build again after the SSH keys in it change. The role stops when the file is untracked or has uncommitted changes, and skips the build when the private repo has no `nixos/fleet.json`. In check mode it checks the file and neither builds nor copies the ISO.
 
 The setup `site.yml` needs, the environment variables it reads, and what it overwrites are in [How a host is built](https://myah-mitchell.github.io/docs/fleet-bootstrap/concepts/how-a-host-is-built/).
 
