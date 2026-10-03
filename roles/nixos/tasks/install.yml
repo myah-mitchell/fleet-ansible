@@ -34,6 +34,43 @@
     quiet: true
   when: not ansible_check_mode
 
+# install-host reads the installer's SSH host key through the Proxmox node
+# that runs the VM, from the VM's guest agent, so it needs the VM's node and
+# VMID, which the vms play noted from OpenTofu, and the node's own SSH host
+# key, which the inventory pins as pve_ssh_host_key.
+- name: Find the VM's Proxmox node
+  ansible.builtin.set_fact:
+    nixos_pve_node: "{{ vms_vm.node_name | default('', true) }}"
+  when:
+    - nixos_host_state.stdout | trim == 'installer'
+    - not ansible_check_mode
+
+- name: Check the VM's Proxmox node is known
+  ansible.builtin.assert:
+    that:
+      - vms_vm is defined
+      - vms_vm.vm_id | default('', true) | string | length > 0
+      - nixos_pve_node in hostvars
+      - hostvars[nixos_pve_node].pve_ssh_host_key | default('') is match('ssh-[a-z0-9-]+ [A-Za-z0-9+/]+=* *$')
+    fail_msg: >-
+      {% if vms_vm is not defined or vms_vm.vm_id | default('', true) | string | length == 0 -%}
+      {{ inventory_hostname }} runs the installer, but this run does not know
+      its VM. The vms play notes the VM's node and VMID from OpenTofu, so run
+      site.yml with the vms tag as well.
+      {%- elif nixos_pve_node not in hostvars -%}
+      The VM of {{ inventory_hostname }} runs on the Proxmox node
+      {{ nixos_pve_node }}, which is not in the inventory. Add it to pve_host
+      with its ansible_host.
+      {%- else -%}
+      {{ nixos_pve_node }} has no pve_ssh_host_key in the inventory. Set it to
+      the node's SSH host key, the contents of
+      /etc/ssh/ssh_host_ed25519_key.pub on the node, read at its console.
+      {%- endif %}
+    quiet: true
+  when:
+    - nixos_host_state.stdout | trim == 'installer'
+    - not ansible_check_mode
+
 # The install partitions the OS and Docker disks, prepares the persistent
 # disk without formatting one that already holds a filesystem, puts the
 # host's SSH keys on it, installs NixOS, and reboots. Evaluating a host takes
@@ -51,6 +88,12 @@
       - "{{ nixos_fleet_dir }}"
       - --build-on
       - "{{ nixos_build_on }}"
+      - --proxmox
+      - "{{ hostvars[nixos_pve_node].ansible_account | default(ansible_account) }}@{{ hostvars[nixos_pve_node].ansible_host | default(nixos_pve_node) }}"
+      - --proxmox-host-key
+      - "{{ hostvars[nixos_pve_node].pve_ssh_host_key }}"
+      - --vmid
+      - "{{ vms_vm.vm_id }}"
       - "{{ inventory_hostname }}"
       - "{{ nixos_address }}"
   changed_when: true

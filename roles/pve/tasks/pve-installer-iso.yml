@@ -12,7 +12,6 @@
       - ls-files
       - --
       - nixos/fleet.json
-      - secrets/installer.yaml
   register: pve_installer_iso_tracked
   changed_when: false
   failed_when: false
@@ -43,7 +42,6 @@
           - --ignored
           - --
           - nixos/fleet.json
-          - secrets/installer.yaml
       register: pve_installer_iso_status
       changed_when: false
       failed_when: false
@@ -52,12 +50,11 @@
       become: false
       run_once: true
 
-    - name: Check the fleet's files are committed
+    - name: Check the fleet's file is committed
       ansible.builtin.assert:
         that:
           - pve_installer_iso_tracked.rc == 0
           - "'nixos/fleet.json' in pve_installer_iso_tracked.stdout_lines"
-          - "'secrets/installer.yaml' in pve_installer_iso_tracked.stdout_lines"
           - pve_installer_iso_status.stdout | length == 0
         fail_msg: >-
           {% if pve_installer_iso_tracked.rc != 0 -%}
@@ -65,18 +62,11 @@
           ({{ pve_installer_iso_tracked.stderr | default('', true) | trim }}).
           The ISO is built from what git tracks, so the private repo has to be
           one.
-          {% elif 'secrets/installer.yaml' not in pve_installer_iso_tracked.stdout_lines
-                  and (inventory_dir ~ '/secrets/installer.yaml') is not file -%}
-          {{ inventory_dir }} has no secrets/installer.yaml, the installer's
-          SSH host key. Make it once with
-          nix run <nixos-fleet>#new-installer-key -- --fleet {{ inventory_dir }},
-          then git add and commit it.
           {% else -%}
-          nixos/fleet.json and secrets/installer.yaml in {{ inventory_dir }}
-          have to be committed, and git has them as untracked, changed or
-          ignored
+          nixos/fleet.json in {{ inventory_dir }} has to be committed, and git
+          has it as untracked, changed or ignored
           ({{ pve_installer_iso_status.stdout_lines | map('trim') | join('; ') }}).
-          The ISO is built from what git tracks, so git add and commit them.
+          The ISO is built from what git tracks, so git add and commit it.
           {%- endif %}
         quiet: true
       run_once: true
@@ -93,10 +83,9 @@
             - pve-installer-iso
 
     # The build runs once, on the control node, for every PVE host in the
-    # play. build-installer decrypts the fleet's installer host key, builds
-    # the ISO with it, and prints the path of the ISO. nix builds nothing when
-    # the flake, the fleet's files and the key are unchanged since the last
-    # run. Check mode builds nothing, and so has nothing to copy.
+    # play. build-installer builds the ISO and prints its path. nix builds
+    # nothing when the flake and the fleet's files are unchanged since the
+    # last run. Check mode builds nothing, and so has nothing to copy.
     - name: Build the installer ISO on the control node
       ansible.builtin.command:
         argv:
@@ -113,15 +102,14 @@
       run_once: true
       when: not ansible_check_mode
 
-    # The ISO holds the installer's private host key, so only root reads it.
-    # QEMU runs as root on Proxmox, and needs no more.
+    # The ISO holds no secret: its sshd makes a host key at every boot.
     - name: Copy the installer ISO to the PVE host
       ansible.builtin.copy:
         src: "{{ pve_installer_iso_build.stdout_lines | last }}"
         dest: "{{ pve_installer_iso_path }}"
         owner: root
         group: root
-        mode: "0600"
+        mode: "0644"
       when: not ansible_check_mode
 
     - name: Say the ISO is left alone in check mode

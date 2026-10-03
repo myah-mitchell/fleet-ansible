@@ -13,8 +13,7 @@ pve_base_dir: "/etc/pve"
 #
 # Skipped when the private repo has no nixos/fleet.json, so an inventory with
 # no NixOS hosts needs no nix. Otherwise the run stops unless nixos/fleet.json
-# and secrets/installer.yaml are committed there: run nixos-sync.yml, make the
-# installer key once with nixos-fleet's new-installer-key, and commit both.
+# is committed there: run nixos-sync.yml and commit what it writes.
 pve_installer_iso_path: "/var/lib/vz/template/iso/nixos-fleet-installer.iso"
 
 pve_enterprise_repo: false
