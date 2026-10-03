@@ -4,9 +4,9 @@
   ansible.builtin.set_fact:
     vms_name: "{{ serverHostname | default(inventory_hostname, true) | lower }}"
 
-# This block runs once, on the control node, for every host in the play. The
+# These blocks run once, on the control node, for every host in the play. The
 # play's hosts may not exist yet, so nothing may connect to them.
-- name: Create the VMs through OpenTofu
+- name: Prepare OpenTofu on the control node
   delegate_to: localhost
   run_once: true
   become: false
@@ -83,6 +83,59 @@
       check_mode: false
       when: vms_backend != 'local'
 
+    # The network each VM gets is an input, in the variables file, so it is
+    # read and checked before the apply, and in check mode too.
+    - name: Initialise OpenTofu
+      ansible.builtin.command:
+        cmd: "{{ vms_tofu }} init -input=false -reconfigure"
+        chdir: "{{ vms_project_path }}"
+      changed_when: false
+      check_mode: false
+
+    - name: Read each VM's network from the variables file
+      ansible.builtin.command:
+        cmd: "{{ vms_tofu }} console"
+        chdir: "{{ vms_project_path }}"
+        stdin: >-
+          jsonencode({ for name, vm in var.vms : name => {
+          address = vm.ipv4_address, gateway = vm.ipv4_gateway, dns = vm.dns_servers } })
+      register: vms_networks
+      changed_when: false
+      check_mode: false
+
+# The network is written twice, once for OpenTofu, which hands it to the
+# installer, and once in the inventory, which the installed host is built from.
+# A mismatch is caught here, before the VM is made, rather than as a VM that
+# answers while it installs and is gone after its first boot, or that installs
+# with one nameserver and boots with another. The nixos role's defaults for
+# network_prefix_length and network_dns are repeated here, since its defaults
+# stay in its play. A VM with no dns_servers gets none from cloud-init, and is
+# not compared. One mismatch stops the run for every host, so no VM is made.
+- name: Check the VM's network matches the inventory
+  ansible.builtin.assert:
+    that:
+      - vms_network.address == (ansible_host | default(inventory_hostname)) ~ '/' ~ (network_prefix_length | default(24))
+      - vms_network.gateway == network_gateway | default('')
+      - vms_network.dns | length == 0 or vms_network.dns == network_dns | default([network_gateway | default('')])
+    fail_msg: >-
+      The variables file gives {{ vms_name }} the address {{ vms_network.address }},
+      the gateway {{ vms_network.gateway }} and the nameservers
+      {{ vms_network.dns | join(', ') if vms_network.dns else 'none' }}. The inventory gives it
+      {{ ansible_host | default('no ansible_host') }}/{{ network_prefix_length | default(24) }},
+      {{ network_gateway | default('no network_gateway') }} and
+      {{ network_dns | default([network_gateway | default('')]) | join(', ') }}.
+      Make the two agree.
+    quiet: true
+  vars:
+    vms_network: "{{ (vms_networks.stdout | from_json | from_json)[vms_name] }}"
+  when: vms_name in (vms_networks.stdout | from_json | from_json)
+  any_errors_fatal: true
+
+- name: Apply the VMs through OpenTofu
+  delegate_to: localhost
+  run_once: true
+  become: false
+  block:
     # Every host in the play is a target, by its VM name. A host the variables
     # file has no VM for matches nothing, and the file's other VMs are left
     # alone until a play targets them. check_destroy refuses any plan that
@@ -117,23 +170,3 @@
   vars:
     vms_known: "{{ (vms_output.stdout | from_json).vms.value | default({}) }}"
   when: vms_name in vms_known
-
-# The network is written twice, once for OpenTofu, which hands it to the
-# installer, and once in the inventory, which the installed host is built from.
-# A mismatch is caught here rather than as a VM that answers while it installs
-# and is gone after its first boot. The nixos role's default for
-# network_prefix_length is repeated here, since its defaults stay in its play.
-- name: Check the VM's network matches the inventory
-  ansible.builtin.assert:
-    that:
-      - vms_vm.ipv4_address == ansible_host | default(inventory_hostname)
-      - vms_vm.ipv4_prefix_length | int == network_prefix_length | default(24) | int
-      - vms_vm.ipv4_gateway == network_gateway | default('')
-    fail_msg: >-
-      OpenTofu gives {{ vms_name }} the address {{ vms_vm.ipv4_address }}/{{ vms_vm.ipv4_prefix_length }}
-      and the gateway {{ vms_vm.ipv4_gateway }}. The inventory gives it
-      {{ ansible_host | default('no ansible_host') }}/{{ network_prefix_length | default(24) }}
-      and {{ network_gateway | default('no network_gateway') }}.
-      Make the two agree.
-    quiet: true
-  when: vms_vm is defined
