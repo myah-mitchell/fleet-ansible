@@ -40,3 +40,13 @@ docker_stacks_standins:
 # once any listed stack has such a rule, and nixos-sync.yml stops before writing
 # anything if it is empty.
 docker_stacks_internal_subnet: ""
+
+# More addresses for one port that a listed stack opens to the internal subnet,
+# for a host outside the subnet that needs that port and no other. Each entry
+# names the port and proto of such a rule and the IPv4 addresses or CIDRs that
+# may also connect to it:
+#   - port: 6379
+#     proto: tcp
+#     sources: ["198.51.100.20/32"]
+# An entry that matches no internal rule on the host stops the NixOS build.
+docker_stacks_port_sources: []

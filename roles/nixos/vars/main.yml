@@ -98,6 +98,7 @@ nixos_host_data: >-
     },
     'swapMiB': swap_size_mib | int,
     'internalSubnet': docker_stacks_internal_subnet | default(''),
+    'portSources': docker_stacks_port_sources | default([]),
     'stacks': {
       'names': docker_stacks_list,
       'projects': docker_stacks_setup | map(attribute='project') | unique | list,

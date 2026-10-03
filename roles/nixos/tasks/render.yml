@@ -95,6 +95,32 @@
     - FIREWALL | bool
     - docker_stacks_setup | map(attribute='firewall') | flatten | selectattr('allow_from', 'equalto', 'internal') | list | length > 0
 
+- name: Check docker_stacks_port_sources is a list
+  ansible.builtin.assert:
+    that:
+      - docker_stacks_port_sources | default([]) is sequence
+      - docker_stacks_port_sources | default([]) is not string
+    fail_msg: docker_stacks_port_sources has to be a list of entries.
+    quiet: true
+
+- name: Check each port source names a port, a protocol and its sources
+  ansible.builtin.assert:
+    that:
+      - item is mapping
+      - item.port | default('') is integer
+      - item.proto | default('') in ['tcp', 'udp']
+      - item.sources | default('') is sequence
+      - item.sources | default('') is not string
+      - item.sources | default([]) | length > 0
+    fail_msg: >-
+      Each entry of docker_stacks_port_sources needs port (a number), proto
+      (tcp or udp) and sources (a list of IPv4 addresses or CIDRs). This one
+      is {{ item }}.
+    quiet: true
+  loop: "{{ docker_stacks_port_sources | default([]) }}"
+  loop_control:
+    label: "{{ item.port | default('') }}/{{ item.proto | default('') }}"
+
 # A mode is a string of octal digits. Unquoted in a setup.yaml, YAML reads it
 # as a number, and the digits are lost before they get here.
 - name: Check every mode is a string of octal digits
