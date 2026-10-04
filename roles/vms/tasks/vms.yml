@@ -17,7 +17,7 @@
         fail_msg: >-
           {{ item }} is not set. OpenTofu reads it from the environment of the
           ansible-playbook process, so set it there (in Semaphore, as a secret
-          in the Template's Environment).
+          in the Variable Group the Template uses).
         quiet: true
       loop: "{{ vms_required_env + (['PG_CONN_STR'] if vms_backend == 'pg' else []) }}"
 

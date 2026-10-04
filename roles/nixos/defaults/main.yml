@@ -72,8 +72,8 @@ nixos_local_checkout: "/tmp/ansible-fleet-nixos-checkout"
 
 # The checkout of the private repo that the flake takes as its fleet input: the
 # inventory's own folder, where nixos-sync.yml writes the files. Nix reads the
-# files git tracks there and nothing else, so a file has to be committed, or at
-# least added, before the flake sees it.
+# files git tracks there and nothing else. The run goes further and stops
+# unless every file under nixos and secrets is committed.
 nixos_fleet_dir: "{{ inventory_dir }}"
 
 # "remote" has the control node evaluate the configuration and the host build
