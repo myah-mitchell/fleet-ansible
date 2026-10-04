@@ -17,7 +17,7 @@
 #### which OpenTofu leaves alone. Without the file the role does nothing.
 
 # The fleet-opentofu repo, checked out once per run on the control node.
-vms_repo_url: "https://github.com/{{ github_user }}/opentofu.git"
+vms_repo_url: "https://github.com/{{ github_user }}/fleet-opentofu.git"
 vms_repo_version: "main"
 vms_local_checkout: "/tmp/ansible-fleet-opentofu-checkout"
 vms_env: "prod"

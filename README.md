@@ -107,7 +107,7 @@ On later runs, drop `-u root` and the password options. The `users` role has cre
 
 | Stage | What it does |
 | --- | --- |
-| `vms` | Creates the Proxmox VM through the [fleet-opentofu](https://github.com/myah-mitchell/opentofu) repo, when the private repo's `opentofu/prod.tfvars` describes one. The VM is blank and boots the installer ISO |
+| `vms` | Creates the Proxmox VM through the [fleet-opentofu](https://github.com/myah-mitchell/fleet-opentofu) repo, when the private repo's `opentofu/prod.tfvars` describes one. The VM is blank and boots the installer ISO |
 | `wait` | Waits for the host to answer on its SSH port |
 | `nixos` | Installs NixOS when the host is running the installer, then deploys the host's configuration |
 | `komodo` | Has Komodo deploy the host's Stacks through a Resource Sync |
