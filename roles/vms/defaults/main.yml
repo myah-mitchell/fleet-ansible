@@ -33,7 +33,7 @@ vms_var_file: "{{ inventory_dir }}/opentofu/{{ vms_env }}.tfvars"
 # for trying the pipeline from a workstation. Moving between the two does not
 # copy the state across.
 vms_backend: "pg"
-vms_local_state_dir: "{{ lookup('env', 'HOME') }}/.local/state/ansible-opentofu"
+vms_local_state_dir: "{{ lookup('env', 'HOME') }}/.local/state/fleet-opentofu"
 
 # Environment variables the configuration reads. The run stops early when one
 # is missing, rather than failing halfway through an init. The Proxmox API
