@@ -103,7 +103,7 @@ On later runs, drop `-u root` and the password options. The `users` role has cre
 
 ## From nothing to running stacks: site.yml
 
-`site.yml` builds the NixOS VMs, which are the inventory's hosts with `NIXOS: true`. For each host in `target` it runs four stages, and each one has a tag of the same name.
+`site.yml` builds the NixOS VMs, which are the inventory's hosts with `NIXOS: true`. For each host in `target` it runs four stages, and each one has a tag of the same name. The wait stage carries the `vms` tag as well, so a run limited to `vms` still waits for the VM.
 
 | Stage | What it does |
 | --- | --- |
