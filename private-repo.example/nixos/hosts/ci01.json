@@ -10,13 +10,13 @@
     "nodeExporter": true
   },
   "hostName": "ci01",
-  "internalSubnet": "192.0.2.0/24",
+  "internalSubnet": "172.16.7.0/24",
   "network": {
-    "address": "192.0.2.103",
+    "address": "172.16.7.121",
     "dns": [
-      "192.0.2.1"
+      "172.16.7.1"
     ],
-    "gateway": "192.0.2.1",
+    "gateway": "172.16.7.1",
     "interface": "ens18",
     "prefixLength": 24
   },

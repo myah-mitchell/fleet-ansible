@@ -1,7 +1,7 @@
 {
-  "abbrName": "ex",
-  "adminList": "exadmins@example.com",
-  "adminName": "exadmin",
+  "abbrName": "mm",
+  "adminList": "mmadmins@myah-mitchell.com",
+  "adminName": "mmadmin",
   "adminSshKeys": [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJlfGdV3OUejKj9G9L2B3AdrXvVpRP0Y/YIWRxXt8xYC example-admin"
   ],
@@ -14,14 +14,14 @@
   "deploySshKeys": [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII+LvUx8tun9nH3oBy5YNg4kqFXE43Qbtpjl4cBrvS8W example-deploy"
   ],
-  "domainName": "example.com",
+  "domainName": "myah-mitchell.com",
   "komodoCoreAddress": "",
   "komodoCorePublicKey": "",
-  "locationAbbr": "h",
-  "locationDomain": "h.example.com",
+  "locationAbbr": "home",
+  "locationDomain": "home.myah-mitchell.com",
   "ntpServers": [],
-  "shortName": "EXAMPLE",
+  "shortName": "MYMI",
   "sshBannerBody": "",
-  "sshBannerName": "EXAMPLE",
+  "sshBannerName": "MYMI",
   "timeZone": "America/Chicago"
 }

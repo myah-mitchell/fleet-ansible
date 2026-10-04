@@ -10,13 +10,13 @@
     "nodeExporter": true
   },
   "hostName": "mx01",
-  "internalSubnet": "192.0.2.0/24",
+  "internalSubnet": "172.16.7.0/24",
   "network": {
-    "address": "198.51.100.102",
+    "address": "172.16.8.121",
     "dns": [
-      "198.51.100.1"
+      "172.16.8.1"
     ],
-    "gateway": "198.51.100.1",
+    "gateway": "172.16.8.1",
     "interface": "ens18",
     "prefixLength": 24
   },

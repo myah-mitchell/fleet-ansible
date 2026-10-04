@@ -47,6 +47,6 @@ docker_stacks_internal_subnet: ""
 # may also connect to it:
 #   - port: 6379
 #     proto: tcp
-#     sources: ["198.51.100.20/32"]
+#     sources: ["172.16.8.20/32"]
 # An entry that matches no internal rule on the host stops the NixOS build.
 docker_stacks_port_sources: []
