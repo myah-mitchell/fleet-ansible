@@ -1,4 +1,4 @@
-# ansible
+# fleet-ansible
 
 Ansible playbooks with two jobs. `provision.yml` configures and hardens Proxmox hosts (VE, PBS and PMG) and other Debian-based hosts. `site.yml` builds the fleet's NixOS VMs: it creates each VM, installs NixOS on it, and deploys its stacks through Komodo.
 
@@ -42,8 +42,8 @@ This provisions the machine you run it on, as the example host `ubuntu`, on a cu
 ```bash
 sudo apt install git ansible sudo python3-netaddr python3-jmespath sshpass figlet
 
-git clone https://github.com/myah-mitchell/ansible /tmp/ansible
-cd /tmp/ansible
+git clone https://github.com/myah-mitchell/fleet-ansible /tmp/fleet-ansible
+cd /tmp/fleet-ansible
 
 ansible-galaxy install -r requirements.yml
 
@@ -62,8 +62,8 @@ The quick start installs into the system's Python. To keep this repo's dependenc
 ```bash
 sudo apt install git python3-venv sshpass figlet
 
-git clone https://github.com/myah-mitchell/ansible /tmp/ansible
-cd /tmp/ansible
+git clone https://github.com/myah-mitchell/fleet-ansible /tmp/fleet-ansible
+cd /tmp/fleet-ansible
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -107,7 +107,7 @@ On later runs, drop `-u root` and the password options. The `users` role has cre
 
 | Stage | What it does |
 | --- | --- |
-| `vms` | Creates the Proxmox VM through the [opentofu](https://github.com/myah-mitchell/opentofu) repo, when the private repo's `opentofu/prod.tfvars` describes one. The VM is blank and boots the installer ISO |
+| `vms` | Creates the Proxmox VM through the [fleet-opentofu](https://github.com/myah-mitchell/opentofu) repo, when the private repo's `opentofu/prod.tfvars` describes one. The VM is blank and boots the installer ISO |
 | `wait` | Waits for the host to answer on its SSH port |
 | `nixos` | Installs NixOS when the host is running the installer, then deploys the host's configuration |
 | `komodo` | Has Komodo deploy the host's Stacks through a Resource Sync |
@@ -126,7 +126,7 @@ ansible-playbook -i ../fleet-private/hosts.yml site.yml -e target=km01 --tags ko
 
 ### What builds the host
 
-Ansible does not configure a NixOS host. The host's whole system is a NixOS configuration, built by the [nixos-fleet](https://github.com/myah-mitchell/nixos-fleet) flake from two kinds of file in the private repo:
+Ansible does not configure a NixOS host. The host's whole system is a NixOS configuration, built by the [fleet-nixos](https://github.com/myah-mitchell/fleet-nixos) flake from two kinds of file in the private repo:
 
 | File | Holds |
 | --- | --- |

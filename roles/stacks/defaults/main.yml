@@ -1,22 +1,22 @@
 ---
-#### STACKS role works out which docker-stacks stacks a host runs, and what
+#### STACKS role works out which fleet-stacks stacks a host runs, and what
 #### each one needs from the host: the runtime folders, seeded config files,
 #### and firewall ports that the stack's containers list in their setup.yaml.
 #### Everything runs on the control node. nixos-sync.yml carries the result to
 #### the host's NixOS configuration, and komodo-sync.yml to Komodo, which
 #### deploys the stacks.
 
-# Stacks this host runs, by folder name under stacks/ in docker-stacks. Set it
+# Stacks this host runs, by folder name under stacks/ in fleet-stacks. Set it
 # per host in the inventory, or pass it with -e as a list or a comma-separated
 # string.
 docker_stacks: []
 
-# {{ github_user }}/docker-stacks is public, so plain HTTPS with no credential.
-docker_stacks_repo_url: "https://github.com/{{ github_user }}/docker-stacks.git"
+# {{ github_user }}/fleet-stacks is public, so plain HTTPS with no credential.
+docker_stacks_repo_url: "https://github.com/{{ github_user }}/fleet-stacks.git"
 docker_stacks_repo_version: "main"
 # Checked out once per play on the control node, where the setup files and the
 # seeded config files are read from.
-docker_stacks_local_checkout: "/tmp/ansible-docker-stacks-checkout"
+docker_stacks_local_checkout: "/tmp/ansible-fleet-stacks-checkout"
 
 # True only while the site is still being built and the fleet services a host's
 # real stacks need are not up yet. The role then leaves out every stack whose

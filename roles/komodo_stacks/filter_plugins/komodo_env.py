@@ -1,4 +1,4 @@
-"""Fill in values in a docker-stacks komodo.env file, and quote it for TOML."""
+"""Fill in values in a fleet-stacks komodo.env file, and quote it for TOML."""
 
 import re
 

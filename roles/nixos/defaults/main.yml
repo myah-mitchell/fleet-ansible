@@ -1,5 +1,5 @@
 ---
-#### NIXOS role builds the hosts that run NixOS, through the nixos-fleet flake.
+#### NIXOS role builds the hosts that run NixOS, through the fleet-nixos flake.
 #### Ansible configures nothing on such a host and runs no Python on it. Every
 #### task here runs on the control node, and the flake's own commands do the
 #### SSH.
@@ -7,7 +7,7 @@
 #### The flake reads what a host is from two kinds of JSON file in the private
 #### repo, next to hosts.yml: nixos/fleet.json, the values every host shares,
 #### and nixos/hosts/<host>.json, one host's network, features and stacks.
-#### nixos-sync.yml writes them from the inventory and docker-stacks, and they
+#### nixos-sync.yml writes them from the inventory and fleet-stacks, and they
 #### are committed. This role renders them again, stops if a committed copy
 #### differs, installs NixOS when the host is booted into the installer, then
 #### deploys the host's configuration.
@@ -64,11 +64,11 @@ ssh_legal_banner_body: ""
 komodo_core_address: ""
 komodo_core_public_key: ""
 
-# The nixos-fleet repo, checked out once per run on the control node. The
+# The fleet-nixos repo, checked out once per run on the control node. The
 # flake's commands and the installer ISO are run and built from this checkout.
-nixos_repo_url: "https://github.com/{{ github_user }}/nixos-fleet.git"
+nixos_repo_url: "https://github.com/{{ github_user }}/fleet-nixos.git"
 nixos_repo_version: "main"
-nixos_local_checkout: "/tmp/ansible-nixos-fleet-checkout"
+nixos_local_checkout: "/tmp/ansible-fleet-nixos-checkout"
 
 # The checkout of the private repo that the flake takes as its fleet input: the
 # inventory's own folder, where nixos-sync.yml writes the files. Nix reads the

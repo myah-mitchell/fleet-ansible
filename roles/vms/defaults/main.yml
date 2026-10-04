@@ -1,13 +1,13 @@
 ---
 #### VMS role creates the Proxmox VMs for the hosts in the play, by running the
-#### opentofu repo's configuration on the control node. It never connects to
+#### fleet-opentofu repo's configuration on the control node. It never connects to
 #### the VMs themselves. A new VM is blank and boots the installer ISO, and
 #### site.yml waits for it and installs NixOS on it afterwards.
 ####
 #### The VMs are described in OpenTofu's own variables file, not the inventory:
 #### opentofu/<vms_env>.tfvars in the private repo, next to hosts.yml. It holds
 #### the Proxmox servers and clusters, and each VM's server, pinned node, size,
-#### disks and network. See envs/<env>/terraform.tfvars.example in the opentofu
+#### disks and network. See envs/<env>/terraform.tfvars.example in the fleet-opentofu
 #### repo. A VM's name there is the host's serverHostname, lowered, which is
 #### how the two are matched, and its address, prefix length and gateway must
 #### match the host's ansible_host, network_prefix_length and network_gateway.
@@ -16,10 +16,10 @@
 #### VMs it is aimed at. A host with no VM in the file is one created by hand,
 #### which OpenTofu leaves alone. Without the file the role does nothing.
 
-# The opentofu repo, checked out once per run on the control node.
+# The fleet-opentofu repo, checked out once per run on the control node.
 vms_repo_url: "https://github.com/{{ github_user }}/opentofu.git"
 vms_repo_version: "main"
-vms_local_checkout: "/tmp/ansible-opentofu-checkout"
+vms_local_checkout: "/tmp/ansible-fleet-opentofu-checkout"
 vms_env: "prod"
 
 # Path to the tofu binary. Empty looks it up on PATH.

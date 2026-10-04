@@ -2,7 +2,7 @@
 # Runs once, on the control node, for every host in the play. A full clone
 # rather than a shallow one, since nix reads the checkout as a git repo and
 # wants its history.
-- name: Clone/update nixos-fleet on the control node
+- name: Clone/update fleet-nixos on the control node
   ansible.builtin.git:
     repo: "{{ nixos_repo_url }}"
     dest: "{{ nixos_local_checkout }}"

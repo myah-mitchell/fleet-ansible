@@ -1,5 +1,5 @@
 ---
-# Writes the files the nixos-fleet flake builds the hosts from, for every host
+# Writes the files the fleet-nixos flake builds the hosts from, for every host
 # in the inventory with NIXOS true: nixos/fleet.json, the values every host
 # shares, and nixos/hosts/<host>.json, one host's network, features and stacks,
 # into nixos/ next to the inventory. Point it at the private repo's inventory,
@@ -8,8 +8,8 @@
 #   ansible-playbook -i ../fleet-private/hosts.yml nixos-sync.yml
 #
 # Nothing connects to the hosts. Each host's file holds what its stacks need
-# from the host, read from docker-stacks' setup.yaml files, so run it again
-# after changing a host in the inventory, and after a docker-stacks change to
+# from the host, read from fleet-stacks' setup.yaml files, so run it again
+# after changing a host in the inventory, and after a fleet-stacks change to
 # a setup.yaml file or a seeded config file. site.yml stops at a host whose
 # committed file is out of date. A file for a host that is no longer a NixOS
 # host is removed, and with it the host's NixOS configuration, but its VM

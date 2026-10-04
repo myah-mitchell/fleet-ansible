@@ -1,10 +1,10 @@
 # Private repo: starter skeleton
 
-This folder is a worked example of the private repo that holds your real environment. The public ansible repo never reads it at run time. Copy it to start your own private repo, for running this project against your real hosts instead of the example data.
+This folder is a worked example of the private repo that holds your real environment. The public fleet-ansible repo never reads it at run time. Copy it to start your own private repo, for running this project against your real hosts instead of the example data.
 
 ## Why two repos
 
-The public ansible repo runs on its own against the example inventory in its root `hosts.yml`, with every private value falling back to an empty role default. Nothing you would rather not publish has to live in a public repo: real hostnames and addresses, SSH keys, CA certificates, a login banner, and the secrets. It all lives in the private repo, which this folder mirrors.
+The public fleet-ansible repo runs on its own against the example inventory in its root `hosts.yml`, with every private value falling back to an empty role default. Nothing you would rather not publish has to live in a public repo: real hostnames and addresses, SSH keys, CA certificates, a login banner, and the secrets. It all lives in the private repo, which this folder mirrors.
 
 | File | Written by | Holds |
 | --- | --- | --- |
@@ -31,12 +31,12 @@ This folder has no encrypted file, since a sops file is only readable with its k
 | Left out | In its place |
 | --- | --- |
 | `group_vars/all/secrets.sops.yaml` | `group_vars/all/secrets.sops.yaml.example`, which shows the keys before encryption. Ansible does not load it |
-| `secrets/` | Nothing. The nixos-fleet repo's `example/` folder shows these files |
+| `secrets/` | Nothing. The fleet-nixos repo's `example/` folder shows these files |
 | `komodo/` | Nothing. Run `komodo-sync.yml` against this inventory to see the files |
 
 The age keys in `.sops.yaml` are placeholders, so sops rejects the file until they are replaced with real ones.
 
-The files under `nixos/` are what `nixos-sync.yml` wrote from this inventory. They hold the text of docker-stacks' seed files, so they go out of date when docker-stacks changes one.
+The files under `nixos/` are what `nixos-sync.yml` wrote from this inventory. They hold the text of fleet-stacks' seed files, so they go out of date when fleet-stacks changes one.
 
 ## Secrets
 
@@ -77,7 +77,7 @@ These steps need nix with flakes enabled, sops, and age on the control node. The
 6. Make each NixOS host's SSH host keys, which also adds the host to `.sops.yaml`:
 
    ```bash
-   nix run github:myah-mitchell/nixos-fleet#new-host-key -- --fleet ../fleet-private <host>
+   nix run github:myah-mitchell/fleet-nixos#new-host-key -- --fleet ../fleet-private <host>
    ```
 
 7. In `hosts.yml`, set `pve_ssh_host_key` on each Proxmox VE host to that host's SSH host key. `install-host` logs in to it to read the installer's host key through the VM's guest agent, and accepts no other key from it. Read the key at the host's console, not over the network:
@@ -104,18 +104,18 @@ These steps need nix with flakes enabled, sops, and age on the control node. The
 
 10. Commit everything in the private repo. The flake reads only the files git tracks, so a file that is not committed does not reach a host.
 
-If you have forked the public ansible repo under your own GitHub account, set `github_user` in its `group_vars/all/vars.yml` to match. That is the only place your GitHub user name is recorded.
+If you have forked the public fleet-ansible repo under your own GitHub account, set `github_user` in its `group_vars/all/vars.yml` to match. That is the only place your GitHub user name is recorded.
 
 ## Keeping it current
 
-Run the two sync playbooks again whenever a NixOS host changes in `hosts.yml`, a fleet value changes in `private.yml`, or docker-stacks changes a stack. Commit what they wrote. `site.yml` stops at a host whose committed files are out of date.
+Run the two sync playbooks again whenever a NixOS host changes in `hosts.yml`, a fleet value changes in `private.yml`, or fleet-stacks changes a stack. Commit what they wrote. `site.yml` stops at a host whose committed files are out of date.
 
 ## Using it
 
 Point Ansible at the private repo's inventory. Ansible loads the `group_vars/` folder next to an inventory file, and the roles find the other folders there too, so nothing is copied between the repos.
 
 ```bash
-cd ansible
+cd fleet-ansible
 ansible-playbook -i ../fleet-private/hosts.yml provision.yml -e target=vh01
 ansible-playbook -i ../fleet-private/hosts.yml site.yml -e target=ex01
 ```

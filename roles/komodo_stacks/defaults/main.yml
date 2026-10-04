@@ -5,7 +5,7 @@
 #### Everything here runs on the control node.
 ####
 #### The Stacks are defined in one TOML file per host, which komodo-sync.yml
-#### writes from the inventory and each stack's komodo.env in docker-stacks,
+#### writes from the inventory and each stack's komodo.env in fleet-stacks,
 #### into the private repo next to hosts.yml. Komodo reads the committed files.
 #### This role renders the host's file again, stops if the committed copy
 #### differs, waits for the host's Periphery, then runs the sync for this
@@ -52,7 +52,7 @@ komodo_stacks_server_delay: 10
 # Where Komodo pulls each Stack from. Same repo and branch the stacks role
 # reads each stack's setup.yaml from.
 komodo_stacks_git_provider: "github.com"
-komodo_stacks_repo: "{{ github_user }}/docker-stacks"
+komodo_stacks_repo: "{{ github_user }}/fleet-stacks"
 komodo_stacks_branch: "{{ docker_stacks_repo_version }}"
 
 # Stacks every VM runs its own copy of. Komodo wants Stack names unique, so

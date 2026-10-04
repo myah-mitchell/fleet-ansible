@@ -14,7 +14,7 @@
     fail_msg: >-
       {{ nixos_sync_dir }}/fleet.json or
       {{ nixos_sync_dir }}/hosts/{{ inventory_hostname }}.json does not match
-      what the inventory and docker-stacks give for this host (the diff above
+      what the inventory and fleet-stacks give for this host (the diff above
       shows how). Run nixos-sync.yml against this inventory, then commit and
       push what it writes.
     quiet: true
@@ -63,7 +63,7 @@
       {%- endif %}
     quiet: true
 
-- name: Check out nixos-fleet
+- name: Check out fleet-nixos
   ansible.builtin.include_tasks: checkout.yml
 
 - name: Install NixOS where the host runs the installer

@@ -1,5 +1,5 @@
 # The VMs site.yml creates, for the example hosts in hosts.yml. The reference
-# for this file, with every rule and key explained, is the opentofu repo's
+# for this file, with every rule and key explained, is the fleet-opentofu repo's
 # envs/prod/terraform.tfvars.example.
 
 servers = {

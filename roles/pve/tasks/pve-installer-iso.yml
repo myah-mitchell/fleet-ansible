@@ -71,9 +71,9 @@
         quiet: true
       run_once: true
 
-    # The nixos role's checkout of nixos-fleet and its settings, which the
+    # The nixos role's checkout of fleet-nixos and its settings, which the
     # build below uses.
-    - name: Check out nixos-fleet
+    - name: Check out fleet-nixos
       ansible.builtin.include_role:
         name: nixos
         tasks_from: checkout

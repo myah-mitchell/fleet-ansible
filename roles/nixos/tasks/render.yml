@@ -1,6 +1,6 @@
 ---
 # Renders the fleet's values and this host's description as the JSON files the
-# nixos-fleet flake reads. nixos-sync.yml writes them for every NixOS host.
+# fleet-nixos flake reads. nixos-sync.yml writes them for every NixOS host.
 # site.yml only renders them in check mode, to find out whether the committed
 # copies still match, and never writes them. Everything here runs on the
 # control node.
@@ -128,7 +128,7 @@
     that: item.1.mode is string and item.1.mode is match('^[0-7]{3,4}$')
     fail_msg: >-
       {{ item.0.stack }} gives {{ item.1.path }} the mode {{ item.1.mode }}.
-      Quote it in the container's setup.yaml in docker-stacks, as in "0750".
+      Quote it in the container's setup.yaml in fleet-stacks, as in "0750".
     quiet: true
   loop: >-
     {{ (docker_stacks_setup | subelements('folders'))
@@ -154,14 +154,14 @@
   loop_control:
     label: "{{ item.1.root }}/{{ item.0.project }}/{{ item.1.path }}"
 
-# The flake takes no docker-stacks input, so a seed file travels as its text.
+# The flake takes no fleet-stacks input, so a seed file travels as its text.
 # The host copies it into place only when nothing is there yet, which keeps a
 # filled-in copy, such as mailrise.conf with its real token, from being
 # replaced by the example.
 # A seed file's text ends up in a committed host file and in the host's
-# world-readable Nix store, so it has to come from docker-stacks' containers
+# world-readable Nix store, so it has to come from fleet-stacks' containers
 # folder and nowhere else on the control node. realpath also follows links.
-- name: Check each seed file comes from docker-stacks' containers folder
+- name: Check each seed file comes from fleet-stacks' containers folder
   ansible.builtin.assert:
     that:
       - >-
@@ -169,7 +169,7 @@
         is match((docker_stacks_local_checkout | realpath | regex_escape) ~ '/containers/')
     fail_msg: >-
       {{ item.0.project }}: the seed file source {{ item.1.source }} is not a
-      file under containers/ in the docker-stacks checkout.
+      file under containers/ in the fleet-stacks checkout.
     quiet: true
   loop: "{{ docker_stacks_setup | subelements('files') }}"
   loop_control:

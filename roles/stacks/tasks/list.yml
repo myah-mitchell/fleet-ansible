@@ -9,7 +9,7 @@
          | map('trim') | reject('equalto', '') | unique | list }}
     docker_stacks_setup: []
 
-- name: Clone/update docker-stacks on the control node
+- name: Clone/update fleet-stacks on the control node
   ansible.builtin.git:
     repo: "{{ docker_stacks_repo_url }}"
     dest: "{{ docker_stacks_local_checkout }}"
@@ -32,7 +32,7 @@
     that: stack_setup_path is file
     fail_msg: >-
       {{ stack_setup_path }} is missing. Check the stack name, or run
-      scripts/build.py in docker-stacks and commit its output.
+      scripts/build.py in fleet-stacks and commit its output.
     quiet: true
   vars:
     stack_setup_path: "{{ docker_stacks_local_checkout }}/stacks/{{ item }}/setup.yaml"
@@ -103,7 +103,7 @@
         that: stack_setup_path is file
         fail_msg: >-
           {{ stack_setup_path }} is missing. Check docker_stacks_standins, or
-          run scripts/build.py in docker-stacks and commit its output.
+          run scripts/build.py in fleet-stacks and commit its output.
         quiet: true
       vars:
         stack_setup_path: "{{ docker_stacks_local_checkout }}/stacks/{{ item }}/setup.yaml"

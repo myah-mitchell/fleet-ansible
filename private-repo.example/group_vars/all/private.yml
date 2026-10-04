@@ -1,6 +1,6 @@
 ---
 #### private.yml: the fleet's values that are not secret but that the public
-#### ansible repo would rather not publish, in one place. This is a starter
+#### fleet-ansible repo would rather not publish, in one place. This is a starter
 #### skeleton: fill in your real values below. Ansible loads it for every host,
 #### because it sits in group_vars/all/ next to hosts.yml. Secrets do not go
 #### here. They go in secrets.sops.yaml, next to this file, which sops
@@ -11,7 +11,7 @@
 # roles/users/defaults/main.yml. A NixOS host needs at least one of each, and
 # nixos-sync.yml stops without them.
 #
-# These two are the example keys of nixos-fleet's example fleet, there only so
+# These two are the example keys of fleet-nixos's example fleet, there only so
 # this example renders. Replace both with your own before anything is built
 # or provisioned from a copy of this file.
 admin_ssh_public_keys:

@@ -21,7 +21,7 @@
         quiet: true
       loop: "{{ vms_required_env + (['PG_CONN_STR'] if vms_backend == 'pg' else []) }}"
 
-    - name: Clone/update opentofu on the control node
+    - name: Clone/update fleet-opentofu on the control node
       ansible.builtin.git:
         repo: "{{ vms_repo_url }}"
         dest: "{{ vms_local_checkout }}"

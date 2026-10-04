@@ -19,7 +19,7 @@
     that: not komodo_sync_file.changed
     fail_msg: >-
       {{ komodo_sync_dir }}/{{ inventory_hostname }}.toml does not match what
-      the inventory and docker-stacks' komodo.env files give for this host (the
+      the inventory and fleet-stacks' komodo.env files give for this host (the
       diff above shows how). Run komodo-sync.yml against this inventory, then
       commit and push what it writes.
     quiet: true

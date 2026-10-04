@@ -3,8 +3,8 @@
 #### group_vars/all/private.yml, this file is meant to be edited directly in a
 #### fork, not overridden by the private repo.
 
-# GitHub user/org this repo and the sibling repos it clones (opentofu,
-# nixos-fleet, docker-stacks, dotfiles) live under. If you fork this repo,
+# GitHub user/org this repo and the sibling repos it clones (fleet-opentofu,
+# fleet-nixos, fleet-stacks, dotfiles) live under. If you fork this repo,
 # change this one value to your own GitHub username/org. The vms, nixos,
 # stacks, komodo_stacks and dotfiles roles build their clone URLs from it, so
 # you don't have to hunt through role defaults.

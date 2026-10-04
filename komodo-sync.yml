@@ -8,8 +8,8 @@
 #   ansible-playbook -i ../fleet-private/hosts.yml komodo-sync.yml
 #
 # Nothing connects to the hosts. Each file holds the host's Stacks with their
-# Environment filled in from docker-stacks' komodo.env files, so run it again
-# after changing a host's stacks in the inventory, and after a docker-stacks
+# Environment filled in from fleet-stacks' komodo.env files, so run it again
+# after changing a host's stacks in the inventory, and after a fleet-stacks
 # change to a komodo.env file. site.yml stops at a host whose committed file
 # is out of date. A file for a host that no longer runs Stacks is removed, but
 # the Stacks themselves stay in Komodo until deleted there.
@@ -56,7 +56,7 @@
 
     # Kept by the whole inventory rather than this play's hosts, so a run with
     # --limit leaves the other hosts' files alone. runs_stacks is in the
-    # ansible repo's group_vars/all/stacks.yml.
+    # fleet-ansible repo's group_vars/all/stacks.yml.
     - name: Remove the files of hosts that no longer run Stacks
       ansible.builtin.file:
         path: "{{ item.path }}"
