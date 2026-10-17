@@ -29,7 +29,7 @@ komodo_core_address: ""
 
 # Core's own public key. It is not secret, so commit the real value here once
 # km01's Core is running. Setting up Komodo shows how to extract it:
-# https://myah-mitchell.github.io/docs/fleet-bootstrap/foundation/komodo-setup/#core-key
+# https://myah-mitchell.github.io/fleet-docs/fleet-bootstrap/foundation/komodo-setup/#core-key
 komodo_core_public_key: ""
 
 # CA certs to trust on every host, as a list of {name, content}. Empty here,
