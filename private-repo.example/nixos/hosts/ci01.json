@@ -24,7 +24,7 @@
   "stacks": {
     "files": [
       {
-        "content": "#!/bin/sh\n# Creates the OpenTofu state database beside Semaphore's own, with a role that\n# owns only that database. The postgres image runs this once, on the first\n# start of an empty data directory, and never again. Changing the password\n# later means ALTER ROLE by hand. See\n# https://myah-mitchell.github.io/fleet-docs/fleet-bootstrap/foundation/handover/#state-database\nset -e\n\n: \"${TOFU_STATE_POSTGRES_PASSWORD:?TOFU_STATE_POSTGRES_PASSWORD is not set}\"\n\npsql -v ON_ERROR_STOP=1 -v pw=\"$TOFU_STATE_POSTGRES_PASSWORD\" \\\n  --username \"$POSTGRES_USER\" --dbname \"$POSTGRES_DB\" <<'SQL'\nCREATE ROLE tofu LOGIN PASSWORD :'pw';\nCREATE DATABASE tofu_state OWNER tofu;\nSQL\n",
+        "content": "#!/bin/sh\n# Creates the OpenTofu state database beside Semaphore's own, with a role that\n# owns only that database. The postgres image runs this once, on the first\n# start of an empty data directory, and never again. Changing the password\n# later means ALTER ROLE by hand. See\n# https://fleet-docs.myah-mitchell.com/fleet-bootstrap/foundation/handover/#state-database\nset -e\n\n: \"${TOFU_STATE_POSTGRES_PASSWORD:?TOFU_STATE_POSTGRES_PASSWORD is not set}\"\n\npsql -v ON_ERROR_STOP=1 -v pw=\"$TOFU_STATE_POSTGRES_PASSWORD\" \\\n  --username \"$POSTGRES_USER\" --dbname \"$POSTGRES_DB\" <<'SQL'\nCREATE ROLE tofu LOGIN PASSWORD :'pw';\nCREATE DATABASE tofu_state OWNER tofu;\nSQL\n",
         "group": 100000,
         "mode": "0755",
         "owner": 100000,

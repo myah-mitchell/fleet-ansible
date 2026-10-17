@@ -23,9 +23,9 @@
 # node, which needs nix, and sops with the age key that decrypts the private
 # repo's secrets.
 #
-# See https://myah-mitchell.github.io/fleet-docs/fleet-bootstrap/concepts/how-a-host-is-built/
+# See https://fleet-docs.myah-mitchell.com/fleet-bootstrap/concepts/how-a-host-is-built/
 # for what each stage does, and
-# https://myah-mitchell.github.io/fleet-docs/fleet-bootstrap/foundation/ for the setup
+# https://fleet-docs.myah-mitchell.com/fleet-bootstrap/foundation/ for the setup
 # this needs.
 
 - name: Create missing VMs

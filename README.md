@@ -161,7 +161,7 @@ cat /etc/ssh/ssh_host_ed25519_key.pub
 
 The ISO is built from the files git tracks in the private repo, so commit `nixos/fleet.json` before building, and build again after the SSH keys in it change. The role stops when the file is untracked or has uncommitted changes, and skips the build when the private repo has no `nixos/fleet.json`. In check mode it checks the file and neither builds nor copies the ISO.
 
-The setup `site.yml` needs, the environment variables it reads, and what it overwrites are in [How a host is built](https://myah-mitchell.github.io/fleet-docs/fleet-bootstrap/concepts/how-a-host-is-built/).
+The setup `site.yml` needs, the environment variables it reads, and what it overwrites are in [How a host is built](https://fleet-docs.myah-mitchell.com/fleet-bootstrap/concepts/how-a-host-is-built/).
 
 ## Using your own environment
 
