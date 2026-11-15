@@ -8,6 +8,9 @@
 #   4. komodo  syncs each host's Stacks into Komodo and waits for them to run,
 #              or says why not when Komodo's API key is not set, as on the
 #              first run of km01, before Komodo Core exists
+#   5. dotfiles  logs in to each host with DOTFILES true and has dfutil set
+#                up the client account's dotfiles. It comes last, so a
+#                failure there never holds back a host's Stacks
 #
 # The VMs are described in opentofu/<env>.tfvars, the hosts in nixos/, and the
 # Stacks in komodo/stacks/, all in the private repo next to the inventory.
@@ -19,9 +22,9 @@
 #
 #   ansible-playbook site.yml -e target=ci01
 #
-# Nothing here runs on the hosts themselves. Every task runs on the control
-# node, which needs nix, and sops with the age key that decrypts the private
-# repo's secrets.
+# Up to the dotfiles stage, nothing here runs on the hosts themselves. Every
+# task runs on the control node, which needs nix, and sops with the age key
+# that decrypts the private repo's secrets.
 #
 # See https://fleet-docs.myah-mitchell.com/fleet-bootstrap/concepts/how-a-host-is-built/
 # for what each stage does, and
@@ -74,3 +77,18 @@
   roles:
     - role: komodo_stacks
       tags: komodo
+
+# Only a host with the dotfiles feature gets this far: see
+# roles/nixos/tasks/dotfiles.yml.
+- name: Set up the client account's dotfiles
+  hosts: "{{ target }}"
+  gather_facts: false
+  become: false
+
+  tasks:
+    - name: Set up the dotfiles on a NixOS host
+      ansible.builtin.import_role:
+        name: nixos
+        tasks_from: dotfiles.yml
+      when: NIXOS | default(false) | bool
+      tags: dotfiles

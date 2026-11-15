@@ -94,7 +94,8 @@ nixos_host_data: >-
       'fail2ban': FAIL2BAN | bool,
       'auditd': AUDITD | bool,
       'mail': MAIL | bool,
-      'mosh': MOSH | bool
+      'mosh': MOSH | bool,
+      'dotfiles': DOTFILES | bool
     },
     'swapMiB': swap_size_mib | int,
     'internalSubnet': docker_stacks_internal_subnet | default(''),

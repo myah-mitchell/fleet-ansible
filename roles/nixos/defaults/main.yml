@@ -37,6 +37,7 @@ FAIL2BAN: true
 AUDITD: false
 MAIL: true
 MOSH: true
+DOTFILES: true
 
 # The accounts every host gets. ansible_account is the deploy account, the one
 # site.yml and Semaphore connect as. It has passwordless sudo and is a nix

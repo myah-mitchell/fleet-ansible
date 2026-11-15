@@ -103,7 +103,7 @@ On later runs, drop `-u root` and the password options. The `users` role has cre
 
 ## From nothing to running stacks: site.yml
 
-`site.yml` builds the NixOS VMs, which are the inventory's hosts with `NIXOS: true`. For each host in `target` it runs four stages, and each one has a tag of the same name. The wait stage carries the `vms` tag as well, so a run limited to `vms` still waits for the VM.
+`site.yml` builds the NixOS VMs, which are the inventory's hosts with `NIXOS: true`. For each host in `target` it runs five stages, and each one has a tag of the same name. The wait stage carries the `vms` tag as well, so a run limited to `vms` still waits for the VM.
 
 | Stage | What it does |
 | --- | --- |
@@ -111,12 +111,13 @@ On later runs, drop `-u root` and the password options. The `users` role has cre
 | `wait` | Waits for the host to answer on its SSH port |
 | `nixos` | Installs NixOS when the host is running the installer, then deploys the host's configuration |
 | `komodo` | Has Komodo deploy the host's Stacks through a Resource Sync |
+| `dotfiles` | Logs in to a host with `DOTFILES: true` as the deploy account and runs the `dotfiles` role, which has dfutil set up the client account's dotfiles |
 
 ```bash
 ansible-playbook -i ../fleet-private/hosts.yml site.yml -e target=ex01
 ```
 
-A host that already runs NixOS is never installed again, so a second run only deploys what changed. With `--check`, nothing is installed, and for a host that already runs NixOS the deploy evaluates its configuration on the control node and prints what would be built, without building it or reaching the host. The komodo stage checks the committed sync file, and reaches neither Periphery nor the Resource Sync.
+A host that already runs NixOS is never installed again, so a second run only deploys what changed. With `--check`, nothing is installed, and for a host that already runs NixOS the deploy evaluates its configuration on the control node and prints what would be built, without building it or reaching the host. The komodo stage checks the committed sync file, and reaches neither Periphery nor the Resource Sync. The dotfiles stage logs in to a host the nixos stage found installed, and does not run dfutil.
 
 The komodo stage needs Komodo's API key and secret, in `KOMODO_API_KEY` and `KOMODO_API_SECRET`. When they are not set, the stage says so and skips the deploy, and the run still ends without a failure. That is how the first run of the first host goes: km01, the host that runs Komodo Core, has no Core yet to make a key. The run creates km01's VM, installs and deploys NixOS, and deploys no Stacks. Once Core is running and has a service user, run the komodo stage again with the key set:
 
@@ -140,7 +141,7 @@ ansible-playbook -i ../fleet-private/hosts.yml nixos-sync.yml
 ansible-playbook -i ../fleet-private/hosts.yml komodo-sync.yml
 ```
 
-Nothing in `site.yml` runs on the host itself, so a NixOS host needs no Python. Every task runs on the control node, where the `nixos` role clones the flake and calls its `host-state`, `install-host` and `deploy-host` commands, which do the SSH.
+Up to the dotfiles stage, nothing in `site.yml` runs on the host itself. Every task runs on the control node, where the `nixos` role clones the flake and calls its `host-state`, `install-host` and `deploy-host` commands, which do the SSH. The dotfiles stage is the one that logs in, as the deploy account, and trusts only the host key in the private repo's `secrets/host-keys/<host>.yaml`. It needs Python on the host, which the host's `dotfiles` feature provides, along with nix-ld for the glibc builds dfutil downloads. The stage comes last, so a failure there never keeps a host's Stacks from being deployed.
 
 ### The installer ISO
 
@@ -206,7 +207,7 @@ The GitHub user or organisation these repos live under is one variable: `github_
 | --- | --- |
 | `hosts.yml` | The example inventory, with placeholder data |
 | `provision.yml` | Configures an existing Debian-based host. Its roles can be picked by tag |
-| `site.yml` | Builds the NixOS VMs: creates them, installs and deploys NixOS, and deploys their Komodo Stacks |
+| `site.yml` | Builds the NixOS VMs: creates them, installs and deploys NixOS, deploys their Komodo Stacks, and sets up the client account's dotfiles |
 | `nixos-sync.yml` | Writes the private repo's `nixos/` files from the inventory |
 | `komodo-sync.yml` | Writes the private repo's `komodo/stacks/<host>.toml` files from the inventory |
 | `group_vars/all/vars.yml` | Shared defaults to edit in a fork, which is `github_user` only |
@@ -214,11 +215,11 @@ The GitHub user or organisation these repos live under is one variable: `github_
 | `roles/` | One role per concern |
 | `private-repo.example/` | A worked example of the private repo |
 
-Most roles configure a Debian-based host and run from `provision.yml`. Four belong to `site.yml` and the two sync playbooks, and run on the control node only:
+Most roles configure a Debian-based host and run from `provision.yml`. Four belong to `site.yml` and the two sync playbooks. They run on the control node, except for the `nixos` role's dotfiles tasks, which log in to a NixOS host and run the `dotfiles` role there, as `provision.yml` does on a Debian-based host:
 
 | Role | What it does |
 | --- | --- |
 | `vms` | Creates the VMs through OpenTofu |
-| `nixos` | Writes a host's NixOS data, and installs and deploys NixOS |
+| `nixos` | Writes a host's NixOS data, installs and deploys NixOS, and logs in to a host for the `dotfiles` role |
 | `stacks` | Works out which stacks a host runs |
 | `komodo_stacks` | Writes a host's Komodo sync file, and deploys its Stacks |

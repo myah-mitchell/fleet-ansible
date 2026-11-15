@@ -1,0 +1,58 @@
+---
+# Sets up the client account's dotfiles on a NixOS host with the dotfiles
+# role. Unlike the rest of this role it logs in to the host, as the deploy
+# account, so the host needs the dotfiles feature, which gives it Python.
+# SSH trusts only the host key in the private repo, as deploy-host does.
+#
+# A check run reaches a host only when the nixos stage found it installed,
+# or when that stage did not run and the host is taken to be built.
+- name: Set up the client account's dotfiles
+  when:
+    - DOTFILES | bool
+    - not ansible_check_mode or nixos_host_state.stdout | default('installed') | trim == 'installed'
+  block:
+    - name: Read the host's SSH public key
+      ansible.builtin.command:
+        argv:
+          - sops
+          - decrypt
+          - --extract
+          - '["ssh_host_ed25519_key.pub"]'
+          - "{{ nixos_fleet_dir }}/secrets/host-keys/{{ inventory_hostname }}.yaml"
+      register: nixos_dotfiles_host_key
+      changed_when: false
+      check_mode: false
+      delegate_to: localhost
+
+    - name: Check the host's SSH public key
+      ansible.builtin.assert:
+        that:
+          - nixos_dotfiles_host_key.stdout is match('ssh-ed25519 [A-Za-z0-9+/]+=*( .*)?$')
+        fail_msg: >-
+          secrets/host-keys/{{ inventory_hostname }}.yaml holds no ed25519
+          public key under ssh_host_ed25519_key.pub.
+        quiet: true
+
+    # ssh asks KnownHostsCommand for the host's key and reads no known hosts
+    # file, so it trusts this one key and nothing else. Nothing is written
+    # to disk, and the line names the host as *, since it is used for this
+    # host only.
+    - name: Log in as the deploy account from here on
+      ansible.builtin.set_fact:
+        ansible_user: "{{ ansible_account }}"
+        ansible_python_interpreter: /run/current-system/sw/bin/python3
+        ansible_ssh_common_args: >-
+          -o StrictHostKeyChecking=yes
+          -o UserKnownHostsFile=/dev/null
+          -o GlobalKnownHostsFile=/dev/null
+          -o HostKeyAlgorithms=ssh-ed25519
+          -o "KnownHostsCommand=/usr/bin/env echo * {{ nixos_dotfiles_host_key.stdout.split()[:2] | join(' ') }}"
+
+    - name: Gather the host's facts
+      ansible.builtin.setup:
+        gather_subset: [min]
+
+    - name: Run the dotfiles role
+      ansible.builtin.include_role:
+        name: dotfiles
+
