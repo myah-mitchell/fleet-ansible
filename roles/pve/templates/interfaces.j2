@@ -35,8 +35,9 @@ iface bond0 inet manual
 # Primary Bridge
 auto vmbr0
 iface vmbr0 inet static
-        address {{ pve_interfaces['mgmt']['ip'] }}/{{ pve_interfaces['mgmt']['cidr'] | default('24') }}
-        gateway {{ pve_interfaces['mgmt']['gw'] | default( pve_interfaces['mgmt']['ip'] | ansible.utils.ipaddr('1')) }}
+{% set pve_mgmt_cidr = pve_interfaces['mgmt']['cidr'] | default('24', true) %}
+        address {{ pve_interfaces['mgmt']['ip'] }}/{{ pve_mgmt_cidr }}
+        gateway {{ pve_interfaces['mgmt']['gw'] | default((pve_interfaces['mgmt']['ip'] ~ '/' ~ pve_mgmt_cidr) | ansible.utils.ipaddr('1') | ansible.utils.ipaddr('address'), true) }}
 {% if pve_interfaces['mgmt']['secondary'] is defined %}
         bridge-ports bond0
 {% else %}

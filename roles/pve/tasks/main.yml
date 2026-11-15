@@ -4,13 +4,15 @@
   args:
     apply:
       become: true
+      tags:
+        - pve-general
+        - pve-network
   when: PVE
+  # Only these tags read pve_interfaces. apply passes them to the included
+  # tasks, which an include's own tags do not.
   tags:
     - pve-general
-    - pve-passthrough
     - pve-network
-    - pve-tls
-    - pve-installer-iso
 
 - name: Include PVE (Proxmox) General Setup Tasks
   ansible.builtin.include_tasks: pve.yml
