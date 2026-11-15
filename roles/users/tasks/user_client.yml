@@ -10,6 +10,14 @@
     state: present
   register: client_user_created
 
+# A task of its own, since a change to the account above also copies the skel
+# files, which an existing home must not get again. The packages role has
+# installed zsh by now.
+- name: Set {{ client_account }} login shell to zsh
+  ansible.builtin.user:
+    name: "{{ client_account|lower }}"
+    shell: /usr/bin/zsh
+
 - name: Set {{ client_account }} user password
   ansible.builtin.user:
     name: "{{ client_account|lower }}"
