@@ -1,7 +1,13 @@
 ---
-- name: Include dotfiles sync tasks
-  ansible.builtin.include_tasks: sync.yml
+- name: Include dfutil tasks
+  ansible.builtin.include_tasks: dfutil.yml
   args:
     apply:
       become: true
+      become_user: "{{ dotfiles_target_user }}"
+      environment: "{{ dotfiles_environment }}"
+  vars:
+    dotfiles_environment: >-
+      {{ {'HOME': dotfiles_home}
+         | combine({'GITHUB_TOKEN': dotfiles_github_token} if dotfiles_github_token else {}) }}
   when: DOTFILES|bool

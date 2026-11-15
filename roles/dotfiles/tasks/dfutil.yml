@@ -1,0 +1,80 @@
+---
+- name: Check for an installed dfutil
+  ansible.builtin.stat:
+    path: "{{ dotfiles_home }}/.local/bin/dfutil"
+  register: dfutil_installed
+
+# dfutil refuses to link its own install over a file it didn't put in
+# ~/.local/bin, so the bootstrap copy goes in a temporary directory instead.
+- name: Bootstrap dfutil from its release
+  when: not dfutil_installed.stat.exists
+  block:
+    - name: Create a directory for the bootstrap dfutil
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: dfutil
+      register: dfutil_bootstrap_dir
+
+    - name: Download the dfutil release
+      ansible.builtin.get_url:
+        url: "{{ dfutil_release_url }}/{{ dfutil_asset }}"
+        checksum: "sha256:{{ dfutil_release_url }}/{{ dfutil_asset }}.sha256"
+        dest: "{{ dfutil_bootstrap_dir.path }}/{{ dfutil_asset }}"
+        mode: "0644"
+      vars:
+        dfutil_release_url: "https://github.com/{{ dfutil_repo }}/releases/download/{{ dfutil_bootstrap_version }}"
+
+    - name: Unpack the dfutil release
+      ansible.builtin.unarchive:
+        src: "{{ dfutil_bootstrap_dir.path }}/{{ dfutil_asset }}"
+        dest: "{{ dfutil_bootstrap_dir.path }}"
+        remote_src: true
+  vars:
+    dfutil_asset: "dfutil-{{ dfutil_bootstrap_version }}-{{ ansible_facts['architecture'] }}-unknown-linux-musl.tar.gz"
+
+- name: Choose the dfutil to run
+  ansible.builtin.set_fact:
+    dfutil_bin: >-
+      {{ dfutil_installed.stat.exists
+         | ternary(dotfiles_home ~ '/.local/bin/dfutil', (dfutil_bootstrap_dir.path | default('')) ~ '/dfutil') }}
+
+- name: Check for a dotfiles checkout
+  ansible.builtin.stat:
+    path: "{{ dotfiles_home }}/dotfiles/.git"
+  register: dotfiles_checkout
+
+# init refuses to run twice, so it's skipped once host.toml exists. A checkout
+# left by a run that failed before writing host.toml is reused, because init
+# also refuses to clone over it.
+- name: Point dfutil at the dotfiles repo
+  ansible.builtin.command:
+    argv:
+      - "{{ dfutil_bin }}"
+      - --json
+      - init
+      - --repo
+      - "{{ dotfiles_checkout.stat.exists | ternary(dotfiles_home ~ '/dotfiles', dotfiles_repo_url) }}"
+      - --preset
+      - "{{ dotfiles_presets | join(',') }}"
+    creates: "{{ dotfiles_home }}/.config/dfutil/host.toml"
+
+# update pulls the repo, relinks the dotfiles, and installs the tools whose
+# pins moved. On a host bootstrapped above it installs everything.
+- name: Install the tools and deploy the dotfiles
+  ansible.builtin.command:
+    argv:
+      - "{{ dfutil_bin }}"
+      - --json
+      - --yes
+      - update
+  register: dfutil_update
+  # rc is unset in check mode, and a failed run may print no JSON.
+  changed_when: >-
+    dfutil_update.rc | default(1) == 0
+    and (dfutil_update.stdout | from_json).changed
+
+- name: Remove the bootstrap dfutil
+  ansible.builtin.file:
+    path: "{{ dfutil_bootstrap_dir.path }}"
+    state: absent
+  when: dfutil_bootstrap_dir.path is defined

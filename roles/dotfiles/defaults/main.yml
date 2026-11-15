@@ -1,14 +1,28 @@
 ---
-#### DOTFILES role syncs and installs the dotfiles repo for interactive shell use.
-#### Targets client_account (the human admin login), not
-#### ansible_account — dotfiles are for interactive shells, the ansible service
-#### account has no interactive login.
+#### DOTFILES role installs dfutil and lets it deploy the dotfiles repo, for
+#### interactive shell use. Targets client_account (the human admin login),
+#### not ansible_account: the ansible service account has no interactive login.
 DOTFILES: true
 
-# {{ github_user }}/dotfiles is public — plain HTTPS, no deploy key/credential needed.
+# {{ github_user }}/dotfiles is public, so plain HTTPS needs no deploy key.
+# dfutil clones it into ~/dotfiles on the first run and pulls it on later runs.
 dotfiles_repo_url: "https://github.com/{{ github_user }}/dotfiles.git"
-dotfiles_repo_version: "main"
-# Checked out once per play on the control node (Semaphore).
-dotfiles_local_checkout: "/tmp/ansible-dotfiles-checkout"
 dotfiles_target_user: "{{ client_account|lower }}"
-dotfiles_remote_path: "/home/{{ dotfiles_target_user }}/GitHub/dotfiles"
+dotfiles_home: "/home/{{ dotfiles_target_user }}"
+
+# Presets from the dotfiles repo's dfutil.toml. Read only by the first run's
+# `dfutil init`; after that the host's ~/.config/dfutil/host.toml holds them,
+# so change an existing host with `dfutil preset select` or `deselect`.
+dotfiles_presets:
+  - base
+
+# The dfutil release downloaded to bootstrap a host that has no dfutil yet.
+# The base preset then installs dfutil's own pinned version into ~/.local/bin,
+# and every later run uses that copy.
+dfutil_repo: "{{ github_user }}/dfutil"
+dfutil_bootstrap_version: "v0.0.2"
+
+# A first install looks up about 50 GitHub releases, and unauthenticated API
+# calls are capped at 60 an hour per address. Set GITHUB_TOKEN in the control
+# node's environment to lift the cap; it's passed through when set.
+dotfiles_github_token: "{{ lookup('ansible.builtin.env', 'GITHUB_TOKEN') }}"

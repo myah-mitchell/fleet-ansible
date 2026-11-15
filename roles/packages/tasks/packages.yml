@@ -28,7 +28,6 @@
       - git       # Needed to pull the ansible git library (should already be installed)
       - sshpass   # Needed to allow ansible user password
       - unzip     # Provides zip handling, needed for ansible BWS CLI Download (should already be installed)
-      - rsync     # Needed by the dotfiles role's synchronize task
       - vim       # VIM over eMacs!
       - htop      # Pretty top
       - iftop     # htop for interfaces
