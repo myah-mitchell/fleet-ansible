@@ -20,6 +20,8 @@
       owner: root
       group: root
       mode: '0500'
+    # The diff of a new file is its contents, here a private key.
+    diff: false
     when: not pmg_tls_key.stat.exists
   
   - name: Create SSL CSR Folder
@@ -106,6 +108,8 @@
       group: backup
       mode: '0640'
       remote_src: true
+    # The diff of a new file is its contents, here a private key.
+    diff: false
     when: pmg_tls_pem.stat.exists
     notify: 
       - pmgproxy_restart

@@ -18,4 +18,6 @@
     mode: '0640'
     trim_blocks: true
     lstrip_blocks: true
+  # The file holds auth_pass, which a diff would print.
+  diff: false
   notify: keepalived_restart

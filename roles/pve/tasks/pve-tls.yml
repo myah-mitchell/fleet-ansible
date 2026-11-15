@@ -19,6 +19,8 @@
       owner: root
       group: root
       mode: '0500'
+    # The diff of a new file is its contents, here a private key.
+    diff: false
     when: not pve_tls_key.stat.exists
   
   - name: Create SSL CSR Folder
