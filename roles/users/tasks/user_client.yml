@@ -16,12 +16,13 @@
     password: "{{ client_password_hash }}"
   when: client_password | length > 0
 
-- name: Ensure {{ client_account }} has sudo privileges
+# The account's sudo comes from the sudo group, which asks for its password.
+# This removes the line that let it run sudo without one.
+- name: Ensure {{ client_account }} has no passwordless sudo
   lineinfile:
     dest: /etc/sudoers
-    state: present
-    regexp: "^{{ client_account|lower }}"
-    line: "{{ client_account|lower }} ALL=(ALL:ALL) NOPASSWD: ALL"
+    state: absent
+    regexp: "^{{ client_account|lower }}\\s"
     validate: "/usr/sbin/visudo -cf %s"
 
 - name: Add pub key(s) to {{ client_account }} user

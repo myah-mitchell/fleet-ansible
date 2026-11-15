@@ -16,12 +16,13 @@
     password: "{{ server_password_hash }}"
   when: server_password | length > 0
 
-- name: Ensure {{ admin_name }} has sudo privileges
+# The account's sudo comes from the sudo group, which asks for its password.
+# This removes the line that let it run sudo without one.
+- name: Ensure {{ admin_name }} has no passwordless sudo
   lineinfile:
     dest: /etc/sudoers
-    state: present
-    regexp: "^{{ admin_name|lower }}"
-    line: "{{ admin_name|lower }} ALL=(ALL:ALL) NOPASSWD: ALL"
+    state: absent
+    regexp: "^{{ admin_name|lower }}\\s"
     validate: "/usr/sbin/visudo -cf %s"
 
 - name: Add admin pub key to {{ admin_name }} user
