@@ -37,11 +37,20 @@
       - ncdu      # Pretty DU
       - multitail # Tail all the files
       - zsh       # Login shell which replaces bash
+      - locales   # Provides locale-gen, for the locale task below
       - figlet    # Needed by the ssh role's legal banner ASCII art task
     state: present
     update_cache: yes
   retries: 3
   delay: 5
+
+# The dotfiles' shell and Zellij setup expect a UTF-8 locale. This only
+# generates it when it's missing; it doesn't change the system default LANG.
+- name: Generate the en_US.UTF-8 locale
+  community.general.locale_gen:
+    name: en_US.UTF-8
+    state: present
+  become: yes
 
 
 - name: Install Packages (Not PVE or PBS)
