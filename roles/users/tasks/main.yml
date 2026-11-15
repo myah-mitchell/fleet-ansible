@@ -10,7 +10,7 @@
   ansible.builtin.include_tasks: password.yml
   when:
     - USERS|bool
-    - server_password | length > 0
+    - (server_password | length > 0) or (client_password | length > 0)
 
 - name: Include Root User Setup Tasks
   ansible.builtin.include_tasks: user_root.yml

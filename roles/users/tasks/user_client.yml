@@ -13,8 +13,8 @@
 - name: Set {{ client_account }} user password
   ansible.builtin.user:
     name: "{{ client_account|lower }}"
-    password: "{{ server_password_hash }}"
-  when: server_password | length > 0
+    password: "{{ client_password_hash }}"
+  when: client_password | length > 0
 
 - name: Ensure {{ client_account }} has sudo privileges
   lineinfile:

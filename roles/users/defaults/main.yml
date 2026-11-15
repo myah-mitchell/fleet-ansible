@@ -24,3 +24,9 @@ users_client_setup: true
 admin_ssh_public_keys: []
 ansible_ssh_public_keys: []
 client_ssh_public_keys: "{{ admin_ssh_public_keys }}"
+
+# The password of client_account. It defaults to server_password, the one
+# root and the admin account get, so a single operator needs only one.
+# Set it in the private repo's secrets.sops.yaml to give the client its own,
+# or to "" to leave the client's password as it is.
+client_password: "{{ server_password }}"

@@ -94,7 +94,7 @@ These steps need nix with flakes enabled, sops, and age on the control node. The
    sops secrets/fleet.yaml
    ```
 
-   The first holds `server_password`. The second holds `server-password-hash` and `komodo-onboarding-key`.
+   The first holds `server_password`, and `client_password` when the client account's password differs. The second holds `server-password-hash`, `client-password-hash` and `komodo-onboarding-key`.
 9. Write the generated files, from the public repo's checkout:
 
    ```bash
